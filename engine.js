@@ -151,6 +151,12 @@ const ENDING_KINDS = {
 };
 
 function showEnding(node) {
+  if (node.type !== 'death') {
+    try {
+      localStorage.setItem('rr_survived', '1');
+      localStorage.setItem('rr_survived_' + S.bg, '1');
+    } catch (e) { /* приватный режим — не страшно */ }
+  }
   const text = val(node.text);
   let html = `<div class="card ending ${node.type}">`;
   html += `<div class="meta">${esc(ENDING_KINDS[node.type])}</div>`;
@@ -185,7 +191,7 @@ function showIntro() {
       <p>Делайте что должно, и будь что будет. Это революция!</p>
     </div>
     <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
-    <div class="path" style="margin-top:28px"><a href="v2.html" style="color:inherit">Вторая часть: «Действующие лица» — сыграйте за Ленина, Николая II, Савинкова, Корнилова или Махно и сверните историю с рельсов →</a></div>
+    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла. Доживёте до 1922-го — откроется вторая часть, «Действующие лица»</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
 }

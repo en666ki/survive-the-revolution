@@ -3,12 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Игра: переживите обе революции</title>
+<title>1917–1922: интерактивные квесты по истории России</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.menu-part { border: 1px solid var(--ink); padding: 22px 24px; margin-bottom: 20px; }
+.menu-part.locked { border-color: var(--line); color: var(--muted); }
+.menu-eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.menu-part.locked .menu-eyebrow { color: var(--muted); }
+.menu-part h2 { margin-bottom: 10px; }
+.menu-part p { font-size: 16px; margin-bottom: 16px; }
+.menu-lock { font-size: 14px; font-style: italic; margin-top: 4px; }
+.menu-progress { font-size: 14px; color: var(--muted); margin-top: 14px; letter-spacing: .02em; }
+.menu-progress b { color: var(--ink); font-weight: normal; }
+.menu-part.locked .menu-progress b { color: var(--muted); }
+a.menu-play { display: inline-block; font: inherit; font-size: 17px; color: var(--ink); border: 1px solid var(--ink); padding: 10px 22px; text-decoration: none; transition: background .15s, color .15s; }
+a.menu-play:hover { background: var(--ink); color: var(--paper); }
+</style>
 </head>
 <body>
-<div id="app"></div>
-<script src="scenario.js"></script>
-<script src="engine.js"></script>
+<div id="app">
+  <div class="card intro">
+    <div class="meta">Интерактивные квесты по истории России</div>
+    <h1>1917–1922</h1>
+    <div class="body">
+      <p>Пять лет, за которые страна переменила три власти, две столицы и одну орфографию. Две игры об одном времени — снизу и сверху.</p>
+    </div>
+
+    <div class="menu-part" style="margin-top:28px">
+      <div class="menu-eyebrow">Часть первая · выживание</div>
+      <h2>Переживите обе революции</h2>
+      <p>Вы — маленький человек: путиловский рабочий, поручик, курсистка или фабрикант. Задача одна — дожить до 1922 года. Судьба бросает кости, прошлые выборы решают, какие двери открыты, а какие — только нарисованы.</p>
+      <a class="menu-play" href="v1.html">Играть</a>
+      <div class="menu-progress" id="progress"></div>
+    </div>
+
+    <div class="menu-part" id="part2">
+      <div class="menu-eyebrow">Часть вторая · альтернативная история</div>
+      <h2>Действующие лица</h2>
+      <p>Вы — Ленин, Николай II, Савинков, Корнилов или Махно. Реальная история — рельсы; свернуть можно только в переломных моментах, где игра честно показывает шанс и цену. В финале — ваша Россия 1922 года и справка, как всё было на самом деле.</p>
+      <span id="p2action"></span>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var BGS = [
+    ['worker', 'Рабочий'],
+    ['officer', 'Поручик'],
+    ['intel', 'Курсистка'],
+    ['merchant', 'Фабрикант'],
+  ];
+  var survived = false, chips = [];
+  try {
+    survived = localStorage.getItem('rr_survived') === '1';
+    chips = BGS.map(function (b) {
+      var ok = localStorage.getItem('rr_survived_' + b[0]) === '1';
+      return ok ? '<b>' + b[1] + ' ✓</b>' : b[1] + ' —';
+    });
+  } catch (e) { survived = true; }
+
+  document.getElementById('progress').innerHTML = chips.length
+    ? 'Дожили до 1922-го: ' + chips.join(' · ')
+    : '';
+
+  var part2 = document.getElementById('part2');
+  var action = document.getElementById('p2action');
+  if (survived) {
+    action.innerHTML = '<a class="menu-play" href="v2.html">Играть</a>';
+  } else {
+    part2.className += ' locked';
+    action.innerHTML = '<div class="menu-lock">Заперто. К рычагам истории допускаются только те, кто дожил до 1922 года хотя бы одной жизнью в первой части. Выживите — и дверь откроется.</div>';
+  }
+})();
+</script>
 </body>
 </html>

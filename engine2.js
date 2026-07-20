@@ -173,8 +173,33 @@ function showEnding(node) {
 
 /* ---------- заставка и выбор персонажа ---------- */
 
+function gateOk() {
+  try {
+    if (new URLSearchParams(location.search).has('skipgate')) return true;
+    return localStorage.getItem('rr_survived') === '1';
+  } catch (e) { return true; }
+}
+
+function showGate() {
+  app.innerHTML = `
+  <div class="card intro">
+    <div class="meta">Часть вторая · вход для выживших</div>
+    <h1>Заперто</h1>
+    <div class="body">
+      <p>К рычагам истории не подпускают с улицы. «Действующие лица» открываются тем, кто хотя бы раз дожил до 1922 года в первой части — любым из четырёх персонажей.</p>
+      <p>Сумеете уцелеть между двумя революциями, террором и тифом — возвращайтесь: Ленин, Николай II, Савинков, Корнилов и Махно будут ждать.</p>
+    </div>
+    <div class="choices">
+      <div class="choice"><button id="tov1">К первой части — выживать</button></div>
+    </div>
+    <div class="path" style="margin-top:20px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
+  </div>`;
+  document.getElementById('tov1').addEventListener('click', () => { location.href = 'v1.html'; });
+}
+
 function showIntro() {
   S = null; W = null;
+  if (!gateOk()) { showGate(); return; }
   app.innerHTML = `
   <div class="card intro">
     <div class="meta">Альтернативная история · 1917–1922</div>
@@ -186,7 +211,7 @@ function showIntro() {
       <p>В конце вы увидите, какой стала ваша Россия к 1922 году — и как всё было на самом деле.</p>
     </div>
     <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
-    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Первая часть: «Переживите обе революции» — выживание маленького человека</a></div>
+    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a> · <a href="v1.html" style="color:inherit">первая часть — выживание</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
 }
