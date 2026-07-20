@@ -164,11 +164,13 @@ function showEnding(node) {
     html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
             S.log.map(l => `<li>${l}</li>`).join('') + `</ul></div>`;
   }
-  html += `<div class="choices"><div class="choice"><button id="again">Переиграть историю ещё раз</button></div></div>`;
+  html += `<div class="choices"><div class="choice"><button id="again">Переиграть историю ещё раз</button></div>` +
+          `<div class="choice"><button id="tomenu">Вернуться в меню</button></div></div>`;
   html += `</div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
   document.getElementById('again').addEventListener('click', showIntro);
+  document.getElementById('tomenu').addEventListener('click', () => { location.href = 'index.html'; });
 }
 
 /* ---------- заставка и выбор персонажа ---------- */
@@ -190,11 +192,10 @@ function showGate() {
       <p>Сумеете уцелеть между двумя революциями, террором и тифом — возвращайтесь: Ленин, Николай II, Савинков, Корнилов и Махно будут ждать.</p>
     </div>
     <div class="choices">
-      <div class="choice"><button id="tov1">К первой части — выживать</button></div>
+      <div class="choice"><button id="tomenu">Вернуться в меню</button></div>
     </div>
-    <div class="path" style="margin-top:20px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
-  document.getElementById('tov1').addEventListener('click', () => { location.href = 'v1.html'; });
+  document.getElementById('tomenu').addEventListener('click', () => { location.href = 'index.html'; });
 }
 
 function showIntro() {
@@ -211,7 +212,7 @@ function showIntro() {
       <p>В конце вы увидите, какой стала ваша Россия к 1922 году — и как всё было на самом деле.</p>
     </div>
     <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
-    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a> · <a href="v1.html" style="color:inherit">первая часть — выживание</a></div>
+    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
 }

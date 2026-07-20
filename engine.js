@@ -169,11 +169,13 @@ function showEnding(node) {
     html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
             S.log.map(l => `<li>${l}</li>`).join('') + `</ul></div>`;
   }
-  html += `<div class="choices"><div class="choice"><button id="again">Прожить ещё одну жизнь</button></div></div>`;
+  html += `<div class="choices"><div class="choice"><button id="again">Прожить ещё одну жизнь</button></div>` +
+          `<div class="choice"><button id="tomenu">Вернуться в меню</button></div></div>`;
   html += `</div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
   document.getElementById('again').addEventListener('click', showIntro);
+  document.getElementById('tomenu').addEventListener('click', () => { location.href = 'index.html'; });
 }
 
 /* ---------- заставка и выбор персонажа ---------- */
@@ -191,7 +193,7 @@ function showIntro() {
       <p>Делайте что должно, и будь что будет. Это революция!</p>
     </div>
     <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
-    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла. Доживёте до 1922-го — откроется вторая часть, «Действующие лица»</a></div>
+    <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
 }
