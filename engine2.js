@@ -59,13 +59,23 @@ function show(id) {
   html += `<div class="choices">`;
 
   const choices = node.choices.filter(c => !c.when || c.when(S, W));
+  // аварийный клапан: если ВСЕ варианты заперты (не хватает влияния),
+  // самый дешёвый переломный открывается за всё оставшееся — история не должна вставать колом
+  const anyOpen = choices.some(c => !((c.req && !c.req(S, W)) || (c.bif && S.vl < (c.bif.cost || 0))));
+  let emergencyIdx = -1;
+  if (!anyOpen) {
+    let best = Infinity;
+    choices.forEach((c, i) => {
+      if (c.bif && !(c.req && !c.req(S, W)) && (c.bif.cost || 0) < best) { best = c.bif.cost || 0; emergencyIdx = i; }
+    });
+  }
   choices.forEach((c, i) => {
     const cost = c.bif ? (c.bif.cost || 0) : 0;
-    const poor = c.bif && S.vl < cost;
+    const poor = c.bif && S.vl < cost && i !== emergencyIdx;
     const locked = (c.req && !c.req(S, W)) || poor;
     const bifMeta = c.bif
       ? `<div class="bif-meta">⚖ Переломный момент · шанс ~${Math.round(val(c.bif.chance) * 100)}%` +
-        (cost ? ` · цена: ${cost} влияния` : '') + `</div>`
+        (i === emergencyIdx && S.vl < cost ? ' · цена: всё оставшееся влияние' : (cost ? ` · цена: ${cost} влияния` : '')) + `</div>`
       : '';
     if (locked) {
       const why = poor ? `Не хватает влияния (нужно ${cost}). Историю не переспоришь с пустыми руками.` : (val(c.locked) || 'Вам это недоступно.');
@@ -154,6 +164,7 @@ function showEnding(node) {
   html += `<h2>${esc(val(node.title))}</h2>`;
   html += `<div class="body">${paras(text)}</div>`;
   html += `<div class="world"><div class="note-title">Ваша Россия, 1922</div>${paras(ep.text)}</div>`;
+  html += `<div class="world"><div class="note-title">Итоги Великой войны</div>${paras(warSummary(W))}</div>`;
   if (ep.real) {
     html += `<div class="realhist"><div class="note-title">Как было на самом деле</div>${paras(ep.real)}</div>`;
   }
