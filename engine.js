@@ -91,16 +91,17 @@ function show(id) {
 }
 
 function pick(choice) {
-  if (choice.fx) choice.fx(S);
-  pushLog(choice.log);
   if (choice.roll) {
+    // эффекты и лог самого выбора — до броска; ветка добавит свои
+    if (choice.fx) choice.fx(S);
+    pushLog(choice.log);
     const chance = val(choice.roll.chance);
     rollDice(() => {
       const branch = Math.random() < chance ? choice.roll.fail : choice.roll.success;
       applyBranch(branch);
     });
   } else {
-    applyBranch(choice);
+    applyBranch(choice); // fx и log применит applyBranch — ровно один раз
   }
 }
 
@@ -184,6 +185,7 @@ function showIntro() {
       <p>Делайте что должно, и будь что будет. Это революция!</p>
     </div>
     <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
+    <div class="path" style="margin-top:28px"><a href="v2.html" style="color:inherit">Вторая часть: «Действующие лица» — сыграйте за Ленина, Николая II, Савинкова, Корнилова или Махно и сверните историю с рельсов →</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
 }

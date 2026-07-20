@@ -1,0 +1,50 @@
+/* Дополнения v2: статусная строка, переломные моменты, эпилог мира */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.stats b { font-weight: normal; color: var(--ink); }
+
+/* переломный момент */
+.choice.bif button { border-width: 2px; border-color: var(--accent); }
+.choice.bif button:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
+.bif-meta {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--accent);
+  padding: 5px 18px 0;
+}
+.choice.locked .bif-meta { color: var(--muted); }
+
+/* выбор персонажа v2 */
+.who-name { display: block; font-size: 21px; margin-bottom: 3px; }
+.who-sub { display: block; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.who-desc { display: block; font-size: 15px; font-style: italic; opacity: .75; }
+.ending.death .who-sub { color: #c8543f; }
+
+/* эпилог мира */
+.world {
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid var(--ink);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.ending.death .world { border-color: #3a352e; }
+.world p { margin-bottom: 12px; }
+.world p:last-child { margin-bottom: 0; }
+
+.realhist {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--accent);
+  background: rgba(158, 43, 37, .05);
+  font-size: 15px;
+}
+.ending.death .realhist { border-left-color: #c8543f; background: rgba(200, 84, 63, .08); }
