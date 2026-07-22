@@ -168,3 +168,31 @@ h2 {
 .path li::before { content: '— '; }
 
 .intro .body p { font-size: 20px; }
+
+/* ---------- глоссарий: сноски ---------- */
+
+.gloss {
+  border-bottom: 1px dotted var(--accent);
+  cursor: help;
+}
+.gloss:hover { background: rgba(158, 43, 37, .07); }
+.gloss:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ending.death .gloss { border-bottom-color: #c8543f; }
+.ending.death .gloss:hover { background: rgba(200, 84, 63, .15); }
+
+.gloss-tip {
+  position: absolute;
+  z-index: 60;
+  background: #171512;
+  color: #efe8da;
+  padding: 11px 14px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.45;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  pointer-events: none;
+}
+.gloss-tip[hidden] { display: none; }

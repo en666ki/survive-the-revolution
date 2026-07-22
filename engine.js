@@ -39,7 +39,8 @@ function esc(s) {
 }
 
 function paras(text) {
-  return text.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+  const html = text.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+  return (typeof annotate === 'function') ? annotate(html) : html;
 }
 
 const PLACES = {
@@ -239,4 +240,5 @@ function validate() {
 }
 
 validate();
+if (typeof initGloss === 'function') initGloss();
 showIntro();

@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "PowerShell(node --version)",
-      "PowerShell(python --version)"
+      "PowerShell(python --version)",
+      "Bash(sed -i 's|<script src=\"scenario.js?v=9\"></script>|<script src=\"glossary.js?v=10\"></script>\\\\n<script src=\"scenario.js?v=10\"></script>|' v1.html)",
+      "Bash(sed -i 's|<script src=\"world.js?v=9\"></script>|<script src=\"glossary.js?v=10\"></script>\\\\n<script src=\"world.js?v=10\"></script>|' v2.html)",
+      "Bash(python -)"
     ]
   }
 }

@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8917"],
       "port": 8917
+    },
+    {
+      "name": "revolution-game-v3",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8918"],
+      "port": 8918
     }
   ]
 }

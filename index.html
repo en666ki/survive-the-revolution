@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>1917–1922: интерактивные квесты по истории России</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=12">
 <style>
 .menu-part { border: 1px solid var(--ink); padding: 22px 24px; margin-bottom: 20px; }
 .menu-part.locked { border-color: var(--line); color: var(--muted); }
@@ -26,7 +26,7 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
     <div class="meta">Интерактивные квесты по истории России</div>
     <h1>1917–1922</h1>
     <div class="body">
-      <p>Пять лет, за которые страна переменила три власти, две столицы и одну орфографию. Две игры об одном времени — снизу и сверху.</p>
+      <p>Пять лет, за которые страна переменила три власти, две столицы и одну орфографию. И то, чем это кончилось пятнадцать лет спустя. Три игры: снизу, сверху — и с той стороны стола.</p>
     </div>
 
     <div class="menu-part" style="margin-top:28px">
@@ -42,6 +42,15 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
       <h2>Действующие лица</h2>
       <p>Вы — Ленин, Николай II, Савинков, Корнилов или Махно. Реальная история — рельсы; свернуть можно только в переломных моментах, где игра честно показывает шанс и цену. В финале — ваша Россия 1922 года и справка, как всё было на самом деле.</p>
       <span id="p2action"></span>
+      <div class="menu-progress" id="progress2"></div>
+    </div>
+
+    <div class="menu-part" id="part3">
+      <div class="menu-eyebrow">Часть третья · 1936–1938</div>
+      <h2>Особая папка</h2>
+      <p>Вы — оперуполномоченный областного управления НКВД. Через ваш стол идут дела: секретари райкомов и комбриги, попы, инженеры, крестьяне, школьники. По каждому решение одно — пустить дальше или убрать. Наверху ждут цифр, внизу остаются бумаги; в тридцать девятом кто-нибудь сядет разбирать и то и другое.</p>
+      <span id="p3action"></span>
+      <div class="menu-progress" id="progress3"></div>
     </div>
   </div>
 </div>
@@ -73,6 +82,39 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
   } else {
     part2.className += ' locked';
     action.innerHTML = '<div class="menu-lock">Заперто. К рычагам истории допускаются только те, кто дожил до 1922 года хотя бы одной жизнью в первой части. Выживите — и дверь откроется.</div>';
+  }
+
+  /* ---- часть третья: допуск только за полное прохождение первых двух ---- */
+  var CAMPS = [
+    ['lenin', 'Ленин'],
+    ['tsar', 'Николай II'],
+    ['savinkov', 'Савинков'],
+    ['kornilov', 'Корнилов'],
+    ['makhno', 'Махно'],
+  ];
+  var get = function (k) {
+    try { return localStorage.getItem(k) === '1'; } catch (e) { return false; }
+  };
+  var bgDone = BGS.map(function (b) { return get('rr_survived_' + b[0]); });
+  var campDone = CAMPS.map(function (c) { return get('rr_v2_alive_' + c[0]); });
+  var all = function (a) { return a.every(function (x) { return x; }); };
+
+  document.getElementById('progress2').innerHTML = 'Проведены живыми: ' +
+    CAMPS.map(function (c, i) {
+      return campDone[i] ? '<b>' + c[1] + ' ✓</b>' : c[1] + ' —';
+    }).join(' · ');
+
+  var part3 = document.getElementById('part3');
+  var action3 = document.getElementById('p3action');
+  if (all(bgDone) && all(campDone)) {
+    action3.innerHTML = '<a class="menu-play" href="v3.html">Играть</a>';
+    document.getElementById('progress3').innerHTML = 'Допуск оформлен.';
+  } else {
+    part3.className += ' locked';
+    action3.innerHTML = '<div class="menu-lock">Заперто. За этот стол садятся, узнав обе стороны стола: нужно дожить до 1922 года <b>всеми четырьмя</b> персонажами первой части и провести <b>всех пятерых</b> действующих лиц второй до конца живыми.</div>';
+    document.getElementById('progress3').innerHTML =
+      'Осталось: ' + bgDone.filter(function (x) { return !x; }).length + ' из 4 судеб · ' +
+      campDone.filter(function (x) { return !x; }).length + ' из 5 действующих лиц';
   }
 })();
 </script>

@@ -27,7 +27,10 @@ function pushLog(t) { if (t) S.log.push(val(t)); }
 /* ---------- рендер ---------- */
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function paras(t) { return t.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join(''); }
+function paras(t) {
+  const html = t.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+  return (typeof annotate === 'function') ? annotate(html) : html;
+}
 
 const VL_WORDS = ['ничтожное', 'ничтожное', 'скромное', 'скромное', 'заметное', 'заметное', 'весомое', 'весомое', 'огромное', 'огромное', 'огромное'];
 const FAME_WORDS = ['в тени', 'в узких кругах', 'на слуху', 'на первых полосах'];
@@ -157,6 +160,13 @@ function rollDice(done, label) {
 const ENDING_KINDS = { death: 'Вы погибли', emigration: 'Вы в эмиграции', survival: 'Вы дожили' };
 
 function showEnding(node) {
+  // третья часть открывается тем, кто провёл всех пятерых без гибели
+  if (node.type !== 'death') {
+    try {
+      localStorage.setItem('rr_v2_done', '1');
+      localStorage.setItem('rr_v2_alive_' + S.camp, '1');
+    } catch (e) { /* приватный режим — не страшно */ }
+  }
   const text = val(node.text);
   const ep = worldEpilogue(W);
   let html = `<div class="card ending ${node.type}">`;
@@ -271,4 +281,5 @@ function validate() {
 }
 
 validate();
+if (typeof initGloss === 'function') initGloss();
 showIntro();
