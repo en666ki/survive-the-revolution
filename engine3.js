@@ -8,7 +8,25 @@
 const app3 = document.getElementById('app');
 
 function newChekState() {
-  return { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, flags: new Set(), log: [], fates: [] };
+  return { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, flags: new Set(), log: [], fates: [], deeds: [] };
+}
+
+// прогон fx варианта на «пустышке» — чтобы узнать, что он меняет, не трогая реальное состояние
+function probeDelta(c) {
+  const tmp = { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, flags: new Set() };
+  const save = CH.S; CH.S = tmp;
+  try { if (c.fx) c.fx(tmp); } catch (e) {}
+  CH.S = save;
+  return tmp;
+}
+
+// человекочитаемый ярлык поступка из log: «1937 — Дудкин: создали организацию» → «создали организацию»
+function cleanLog(log) {
+  if (!log) return '';
+  let t = String(chVal(log)).replace(/^\d{4}\s*[—–-]\s*/, '');
+  const m = t.match(/^[^:]{1,24}:\s*/);
+  if (m && t.length - m[0].length > 12) t = t.slice(m[0].length);
+  return t;
 }
 
 function esc3(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -41,11 +59,13 @@ function gloss3(s) {
 
 function fileHtml(f) {
   const rows = [];
-  const add = (k, v) => { if (v) rows.push(`<div class="f-row"><span class="f-key">${esc3(k)}</span><span class="f-val">${gloss3(chVal(v))}</span></div>`); };
-  add('Фамилия, имя, отчество', f.name);
+  // прочерк «—» в карточке — это «графа неприменима», а не значение: не показываем
+  const add = (k, v) => { const val = chVal(v); if (val && val !== '—') rows.push(`<div class="f-row"><span class="f-key">${esc3(k)}</span><span class="f-val">${gloss3(val)}</span></div>`); };
+  // дела «по факту» (авария, происшествие) заводятся без ФИО — тогда своя подпись строки
+  add(f.nameLabel || 'Фамилия, имя, отчество', f.name);
   add('Год и место рождения', f.born);
   add('Социальное происхождение', f.origin);
-  add('Занятие ко дню ареста', f.job);
+  add(f.jobLabel || 'Занятие ко дню ареста', f.job);
   add('Источник материала', f.source);
   add('Квалификация (предварительно)', f.article);
   // «№ 4711» → «Следственное дело № 4711»; «справка на тройку № 1147» — как есть
@@ -87,6 +107,7 @@ function show3(id) {
   html += `<div class="choices">`;
 
   const choices = (node.choices || []).filter(c => !c.when || c.when(CH.S));
+  CH.curChoices = choices;
   choices.forEach((c, i) => {
     const locked = c.req && !c.req(CH.S);
     const mark = c.mark ? ` ${MARKS[c.mark]}` : '';
@@ -107,7 +128,17 @@ function show3(id) {
 }
 
 function pick3(c) {
+  const b = { plan: CH.S.plan, exc: CH.S.exc, susp: CH.S.susp };
   if (c.fx) c.fx(CH.S);
+  // вклад решения: нарушения, подозрение и «сдержанность» (насколько недобрали
+  // плана против самого результативного варианта в этом же деле)
+  const dExc = CH.S.exc - b.exc, dSusp = CH.S.susp - b.susp, dPlan = CH.S.plan - b.plan;
+  let maxPlan = dPlan;
+  (CH.curChoices || []).forEach(sib => { const sd = probeDelta(sib); if (sd.plan > maxPlan) maxPlan = sd.plan; });
+  const restraint = maxPlan - dPlan;
+  if (dExc > 0 || dSusp > 0 || restraint > 0) {
+    CH.S.deeds.push({ label: chVal(c.recall) || cleanLog(c.log) || chVal(c.text), exc: dExc, susp: dSusp, restraint: restraint });
+  }
   if (c.log) CH.S.log.push(chVal(c.log));
   if (c.fate) CH.S.fates.push(chVal(c.fate));
   const result = chVal(c.result);
@@ -138,6 +169,7 @@ function showChekEnding(node) {
   html += `<div class="body">${paras3(chVal(node.text))}</div>`;
   html += `<div class="world"><div class="note-title">Ваш итог по управлению</div>` +
     paras3(chekSummary(s, node.type === 'survival', !!node.rescued)) + `</div>`;
+  html += chekRecall(s, node);
   if (node.note) html += `<div class="realhist"><div class="note-title">Как было на самом деле</div>${paras3(chVal(node.note))}</div>`;
   if (s.fates.length) {
     html += `<div class="path"><div class="note-title">Прошли через ваши руки</div><ul>` +
@@ -156,13 +188,77 @@ function showChekEnding(node) {
   document.getElementById('tomenu').addEventListener('click', () => { location.href = 'index.html'; });
 }
 
+// самый весомый поступок по счётчику key (можно исключить уже названный)
+function topDeed(deeds, key, skip) {
+  let best = null;
+  (deeds || []).forEach(d => {
+    if (d === skip) return;
+    if (d[key] > 0 && (!best || d[key] > best[key])) best = d;
+  });
+  return best;
+}
+
+// блок «Что вам припомнили / Что зачлось»: реальные решения игрока,
+// поднятые тем счётчиком, который его и погубил (или спас)
+function chekRecall(s, node) {
+  const kind = node.recallKind;
+  if (!kind) return '';
+  const d = s.deeds || [];
+  const P = [];
+  let title = 'Что вам припомнили';
+
+  if (kind === 'exc') {
+    const a = topDeed(d, 'exc'), b = topDeed(d, 'exc', a);
+    if (a) {
+      let t = 'Обвинительное заключение открывалось тем, как вы ' + a.label + '.';
+      if (b) t += ' Следующим эпизодом шло, как вы ' + b.label + '.';
+      t += ' Оба протокола были составлены вашей рукой — это в тридцать девятом и подшили.';
+      P.push(t);
+    } else P.push('Отдельных эпизодов искать не стали: под приговор хватило общего счёта ваших подписей.');
+  } else if (kind === 'susp_restraint') {
+    const a = topDeed(d, 'susp'), r = topDeed(d, 'restraint');
+    let t = '';
+    if (a) t += 'Тяжелее всего в вашем формуляре легло, как вы ' + a.label + '.';
+    if (r) t += (t ? ' ' : '') + 'А рядом подшили, как вы ' + r.label + ', — назвали это развалом дел и выгораживанием изобличённых.';
+    P.push(t || 'Вам не предъявили ничего конкретного: «врагу в органах» конкретика не полагалась.');
+  } else if (kind === 'restraint') {
+    const a = topDeed(d, 'restraint'), b = topDeed(d, 'restraint', a);
+    if (a) {
+      let t = 'Вам поставили в вину прежде всего, как вы ' + a.label;
+      if (b) t += ', и как вы ' + b.label;
+      t += '. Там, где полагалось дать «выход», вы придерживали, — и это сочли не осторожностью, а умыслом.';
+      P.push(t);
+    } else P.push('Вам вменили общую мягкость, не разбирая по эпизодам.');
+  } else if (kind === 'exc_light') {
+    const a = topDeed(d, 'exc'), b = topDeed(d, 'exc', a);
+    if (a) {
+      let t = 'На разборе вам предъявили, как вы ' + a.label;
+      if (b) t += ', и как вы ' + b.label;
+      t += '.';
+      P.push(t);
+    } else P.push('Тяжёлых эпизодов за вами не нашли — оттого и обошлось этим.');
+  } else if (kind === 'alive') {
+    title = 'Что зачлось';
+    const r = topDeed(d, 'restraint'), r2 = topDeed(d, 'restraint', r);
+    if (r) {
+      let t = 'Когда вас вызвали в комиссию, вспомнили и то, как вы ' + r.label;
+      if (r2) t += ', как вы ' + r2.label;
+      t += '. В тридцать девятом это впервые оказалось не виной, а заслугой.';
+      P.push(t);
+    } else return '';
+  }
+
+  if (!P.length) return '';
+  return `<div class="world"><div class="note-title">${title}</div>${paras3(P.join('\n\n'))}</div>`;
+}
+
 function chekSummary(s, survived, rescued) {
   const pace = s.plan - s.exp;
   const out = [];
   // счёт идёт на сотни: 19 сцен — это те дела, что вы помните поимённо,
   // а не весь поток, прошедший через участок за два года
   const n = s.fates.length;
-  let t = 'За два года через ваш стол прошли сотни дел: справки на тройку, альбомные справки, протоколы, подшивки. ' +
+  let t = 'Через ваш стол прошли сотни дел: справки на тройку, альбомные справки, протоколы, подшивки. ' +
     (n ? (n === 1 ? 'Одно' : n) + ' из них вы будете помнить поимённо. ' : '');
   if (pace >= 8) t += 'По «выходу» вы шли в передовиках управления: реализация стабильно превышала ожидаемую, и это отмечалось на оперативных совещаниях.';
   else if (pace >= 2) t += 'По «выходу» вы держались чуть выше нормы — достаточно, чтобы вас не трогали, и недостаточно, чтобы ставить в пример.';
