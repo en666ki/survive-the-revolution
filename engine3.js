@@ -137,7 +137,7 @@ function showChekEnding(node) {
   html += `<h2>${esc3(chVal(node.title))}</h2>`;
   html += `<div class="body">${paras3(chVal(node.text))}</div>`;
   html += `<div class="world"><div class="note-title">Ваш итог по управлению</div>` +
-    paras3(chekSummary(s, node.type === 'survival')) + `</div>`;
+    paras3(chekSummary(s, node.type === 'survival', !!node.rescued)) + `</div>`;
   if (node.note) html += `<div class="realhist"><div class="note-title">Как было на самом деле</div>${paras3(chVal(node.note))}</div>`;
   if (s.fates.length) {
     html += `<div class="path"><div class="note-title">Прошли через ваши руки</div><ul>` +
@@ -156,7 +156,7 @@ function showChekEnding(node) {
   document.getElementById('tomenu').addEventListener('click', () => { location.href = 'index.html'; });
 }
 
-function chekSummary(s, alive) {
+function chekSummary(s, survived, rescued) {
   const pace = s.plan - s.exp;
   const out = [];
   // счёт идёт на сотни: 19 сцен — это те дела, что вы помните поимённо,
@@ -184,7 +184,8 @@ function chekSummary(s, alive) {
   else p = 'К концу тридцать восьмого вас разрабатывали свои же — и это было вопросом не «если», а «когда».';
   out.push(p);
 
-  if (s.ins >= 5 && alive) out.push('Ваша папка — вторые экземпляры рапортов с входящими номерами, копии постановлений о прекращении, справки о недостаточности материалов — оказалась единственным, что говорило в вашу пользу. Бумага, в конце концов, победила бумагу.');
+  if (s.ins >= 5 && rescued) out.push('Ваша папка — вторые экземпляры рапортов с входящими номерами, копии постановлений о прекращении, справки о недостаточности материалов — оказалась единственным, что говорило в вашу пользу. Бумага, в конце концов, победила бумагу.');
+  else if (s.ins >= 5 && survived) out.push('Ваша папка не вернула вам ни звания, ни комнаты. Но, судя по тому, что дело кончилось выговором и высылкой, а не приговором, именно вторые экземпляры с входящими номерами удержали вас от худшего.');
   else if (s.ins >= 5) out.push('Ваша папка была собрана правильно и в срок — вторые экземпляры, входящие номера, даты. Её просто не хватило: против такого счёта подписей не помогает никакая опись.');
   else if (s.ins > 0) out.push('Кое-какие бумаги вы всё же откладывали, но их не хватило, чтобы составить историю в свою защиту.');
   else out.push('Вы не оставили в свою защиту ни одной бумаги. В этой системе это означало, что вас не существовало отдельно от того, что вы подписали.');
