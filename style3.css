@@ -63,3 +63,13 @@
 
 /* концовка «уцелел» */
 .ending.survival .meta { color: #4a5d3a; }
+
+.f-val .evidence { display: flex; align-items: baseline; gap: 8px; text-indent: 0; padding: 5px 0; }
+.f-val .evidence::before { content: none; }
+.pencil-mark { flex: 0 0 28px; min-height: 28px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 20px; cursor: pointer; }
+.evidence.marked > span { background: rgba(145, 115, 66, .12); text-decoration: underline; text-decoration-color: #9f8a67; text-underline-offset: 4px; }
+.dossier-help { font-family: Georgia, serif; color: var(--muted); font-size: 14px; margin-top: 12px; }
+.paper-trail { padding-left: 20px; font-size: 15px; }
+.paper-trail li { padding-bottom: 8px; }
+.paper-trail span { color: var(--muted); }
+.ending.punishment .meta { color: #735b3d; }

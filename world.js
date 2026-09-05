@@ -52,6 +52,7 @@ function divergedFlags(w) {
 
 function worldEpilogue(wRaw) {
   const w = resolveWorld(wRaw);
+  if (w.settlement) return settlementEpilogue(w);
   const p = [];
 
   if (w.monarchy === 'saved') {

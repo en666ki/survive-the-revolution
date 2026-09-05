@@ -6,18 +6,44 @@
    ============================================================ */
 
 const app3 = document.getElementById('app');
+let currentCase = null;
+let choosing3 = false;
 
 function newChekState() {
-  return { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, fab: 0, flags: new Set(), log: [], fates: [], deeds: [] };
+  return { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, fab: 0, flags: new Set(), log: [], fates: [], deeds: [], marks: {}, paperTrail: [] };
 }
 
 // прогон fx варианта на «пустышке» — чтобы узнать, что он меняет, не трогая реальное состояние
-function probeDelta(c) {
-  const tmp = { plan: 0, exp: 0, exc: 0, susp: 0, ins: 0, flags: new Set() };
+function probeDelta(c, base) {
+  const tmp = {...base, flags: new Set(base.flags), log: [...base.log], fates: [...base.fates], deeds: [...base.deeds]};
   const save = CH.S; CH.S = tmp;
-  try { if (c.fx) c.fx(tmp); } catch (e) {}
-  CH.S = save;
-  return tmp;
+  try { if (c.fx) c.fx(tmp); }
+  finally { CH.S = save; }
+  return {plan: tmp.plan - base.plan, exc: tmp.exc - base.exc, susp: tmp.susp - base.susp};
+}
+
+function saveChekScene() {
+  const node = NODES3[currentCase];
+  RR.save(3, {screen: 'scene', id: currentCase, state: CH.S, label: chVal(node.title) || chVal(node.date)});
+}
+
+function folderHtml() {
+  const papers = CH.S.paperTrail || [];
+  const content = papers.length
+    ? `<ul class="paper-trail">${papers.map(p => `<li>${esc3(p.label)} <span>· ${p.count} док.</span></li>`).join('')}</ul>`
+    : '<p>Здесь будут вторые экземпляры и рапорты, которые вы решите сохранить.</p>';
+  return RR.details('Ваша папка · ' + CH.S.ins + ' док.', content);
+}
+
+function trackPapers(before, c) {
+  const s = CH.S, diff = s.ins - before;
+  if (diff > 0) s.paperTrail.push({label: (chVal(c.log) || chVal(c.text)).replace(/^\d{4}\s*[—–-]\s*/, ''), count: diff});
+  let remove = -diff;
+  while (remove > 0 && s.paperTrail.length) {
+    const last = s.paperTrail[s.paperTrail.length - 1];
+    const n = Math.min(remove, last.count); last.count -= n; remove -= n;
+    if (!last.count) s.paperTrail.pop();
+  }
 }
 
 // человекочитаемый ярлык поступка из log: «1937 — Дудкин: создали организацию» → «создали организацию»
@@ -74,7 +100,10 @@ function fileHtml(f) {
   let html = `<div class="dossier"><div class="d-head">${esc3(head)}</div>${rows.join('')}`;
   if (f.evidence && f.evidence.length) {
     html += `<div class="f-row f-block"><span class="f-key">В деле имеется</span><span class="f-val"><ul>` +
-      f.evidence.map(e => `<li>${gloss3(chVal(e))}</li>`).join('') + `</ul></span></div>`;
+      f.evidence.map((e, i) => {
+        const marked = (CH.S.marks[currentCase] || []).includes(i);
+        return `<li class="evidence${marked ? ' marked' : ''}"><button class="pencil-mark" data-evidence="${i}" aria-pressed="${marked}" aria-label="Пометить карандашом: ${RR.escape(chVal(e))}">${marked ? '✓' : '○'}</button><span>${gloss3(chVal(e))}</span></li>`;
+      }).join('') + `</ul><p class="dossier-help">Кружок у строки — ваша пометка карандашом. Она не меняет решение по делу.</p></span></div>`;
   }
   html += `</div>`;
   return html;
@@ -84,14 +113,16 @@ function fileHtml(f) {
 
 const MARKS = { shoot: 'm-shoot', camp: 'm-camp', free: 'm-free', fab: 'm-fab' };
 
-function show3(id) {
+function show3(id, resumed = false) {
   const node = NODES3[id];
   if (!node) { app3.innerHTML = `<div class="card"><p>Сцена «${esc3(id)}» не найдена.</p></div>`; return; }
   if (node.check) { const to = node.check(CH.S); if (to) { show3(to); return; } }
   if (node.redirect) { show3(node.redirect(CH.S)); return; }
   if (node.type) { showChekEnding(node); return; }
-  if (node.enter) node.enter(CH.S);
-  if (node.quota) CH.S.exp += node.quota;
+  if (node.enter && !resumed) node.enter(CH.S);
+  if (node.quota && !resumed) CH.S.exp += node.quota;
+  currentCase = id; choosing3 = false;
+  saveChekScene();
 
   const meta = [];
   if (node.date) meta.push(chVal(node.date));
@@ -101,8 +132,10 @@ function show3(id) {
   html += `<div class="meta">${meta.map(esc3).join(' · ')}</div>`;
   html += chStats();
   if (node.title) html += `<h2>${esc3(chVal(node.title))}</h2>`;
+  if (['ck_ch3', 'ck_p6'].includes(id)) html += RR.illustration('folder', true);
   if (node.file) html += fileHtml(node.file);
   html += `<div class="body">${paras3(chVal(node.text))}</div>`;
+  html += folderHtml();
   if (node.ask) html += `<div class="ask">${esc3(chVal(node.ask))}</div>`;
   html += `<div class="choices">`;
 
@@ -122,20 +155,36 @@ function show3(id) {
   html += `</div></div>`;
   app3.innerHTML = html;
   window.scrollTo(0, 0);
+  RR.focusScene(app3);
+  app3.querySelectorAll('[data-evidence]').forEach(btn => btn.addEventListener('click', () => {
+    const i = +btn.dataset.evidence;
+    const marks = new Set(CH.S.marks[id] || []);
+    if (marks.has(i)) marks.delete(i); else marks.add(i);
+    CH.S.marks[id] = [...marks];
+    btn.setAttribute('aria-pressed', String(marks.has(i)));
+    btn.textContent = marks.has(i) ? '✓' : '○';
+    btn.closest('li').classList.toggle('marked', marks.has(i));
+    saveChekScene();
+  }));
   app3.querySelectorAll('button[data-i]').forEach(btn => {
     btn.addEventListener('click', () => pick3(choices[+btn.dataset.i]));
   });
 }
 
 function pick3(c) {
-  const b = { plan: CH.S.plan, exc: CH.S.exc, susp: CH.S.susp };
+  if (choosing3) return;
+  choosing3 = true; RR.lockChoices(app3);
+  const b = {...CH.S, flags: new Set(CH.S.flags)};
+  const available = (CH.curChoices || []).filter(sib => !sib.req || sib.req(CH.S));
+  let maxPlan = 0;
+  available.forEach(sib => { const sd = probeDelta(sib, b); maxPlan = Math.max(maxPlan, sd.plan); });
   if (c.fx) c.fx(CH.S);
+  trackPapers(b.ins, c);
   if (c.mark === 'fab') CH.S.fab = (CH.S.fab || 0) + 1;
   // вклад решения: нарушения, подозрение и «сдержанность» (насколько недобрали
   // плана против самого результативного варианта в этом же деле)
   const dExc = CH.S.exc - b.exc, dSusp = CH.S.susp - b.susp, dPlan = CH.S.plan - b.plan;
-  let maxPlan = dPlan;
-  (CH.curChoices || []).forEach(sib => { const sd = probeDelta(sib); if (sd.plan > maxPlan) maxPlan = sd.plan; });
+  maxPlan = Math.max(maxPlan, dPlan);
   const restraint = maxPlan - dPlan;
   if (dExc > 0 || dSusp > 0 || restraint > 0) {
     CH.S.deeds.push({ label: chVal(c.recall) || cleanLog(c.log) || chVal(c.text), exc: dExc, susp: dSusp, restraint: restraint });
@@ -148,10 +197,11 @@ function pick3(c) {
 }
 
 function showResult3(text, note, nextId) {
+  RR.save(3, {screen: 'result', text, note: chVal(note), nextId, state: CH.S, label: 'последствия решения'});
   const next = NODES3[nextId];
   const isEnd = next && next.type;
   let html = `<div class="card result"><div class="body">${paras3(text)}</div>`;
-  if (note) html += `<div class="note"><div class="note-title">Историческая справка</div>${paras3(chVal(note))}</div>`;
+  if (note) html += RR.details('Историческая справка', paras3(chVal(note)));
   html += `<div class="choices"><div class="choice"><button id="go">${isEnd ? 'Что же дальше?' : 'Дальше'}</button></div></div></div>`;
   app3.innerHTML = html;
   window.scrollTo(0, 0);
@@ -160,9 +210,10 @@ function showResult3(text, note, nextId) {
 
 /* ---------- концовка ---------- */
 
-const CHEK_KINDS = { death: 'Дело окончено', survival: 'Вы уцелели' };
+const CHEK_KINDS = { death: 'Дело окончено', survival: 'Вы уцелели', punishment: 'Вы осуждены' };
 
 function showChekEnding(node) {
+  RR.clear(3);
   const s = CH.S;
   let html = `<div class="card ending ${node.type}">`;
   html += `<div class="meta">${esc3(CHEK_KINDS[node.type])}</div>`;
@@ -171,6 +222,7 @@ function showChekEnding(node) {
   html += `<div class="world"><div class="note-title">Ваш итог по управлению</div>` +
     paras3(chekSummary(s, node.type === 'survival', !!node.rescued)) + `</div>`;
   html += chekRecall(s, node);
+  html += folderHtml();
   if (node.note) html += `<div class="realhist"><div class="note-title">Как было на самом деле</div>${paras3(chVal(node.note))}</div>`;
   if (s.fates.length) {
     html += `<div class="path"><div class="note-title">Прошли через ваши руки</div><ul>` +
@@ -256,7 +308,7 @@ function chekRecall(s, node) {
 function chekSummary(s, survived, rescued) {
   const pace = s.plan - s.exp;
   const out = [];
-  // счёт идёт на сотни: 19 сцен — это те дела, что вы помните поимённо,
+  // Счёт идёт на сотни: показанные дела — те, что вы помните поимённо,
   // а не весь поток, прошедший через участок за два года
   const n = s.fates.length;
   let t = 'Через ваш стол прошли сотни дел: справки на тройку, альбомные справки, протоколы, подшивки. ' +
@@ -270,20 +322,20 @@ function chekSummary(s, survived, rescued) {
   let e = '';
   if (!s.fab) {
     // ни одного сфабрикованного дела — весь «выход» шёл по приказу и материалу
-    if (s.exc <= 2) e = 'Организаций вы не выдумывали, и лишней крови на вас нет: вы шли только там, где был материал или прямой приказ сверху.';
-    else if (s.exc <= 11) e = 'Сетей и организаций вы не сочиняли — но под расстрелами и сроками, которые вы знали пустыми, стоит ваша подпись, и в тридцать девятом спросят именно за неё.';
-    else e = 'Вы не придумали ни одной организации, ни одной явки — и всё же счёт подписанных вами приговоров, которые не выдержали бы никакой проверки, идёт на десятки. Вы не выдумывали врагов. Вы просто ни разу не отказались привести приговор в исполнение.';
+    if (s.exc <= 6) e = 'Организаций вы не выдумывали; отдельных нарушений за вами сравнительно мало. Это не отменяет подписанных вами решений и не делает приказ сверху доказательством чьей-либо вины.';
+    else if (s.exc <= 16) e = 'Сетей и организаций вы не сочиняли — но под необоснованными расстрелами и сроками стоит ваша подпись. Эти эпизоды можно поднять по номерам дел.';
+    else e = 'Вы не придумали ни одной организации, ни одной явки — и всё же накопили тяжёлый счёт необоснованных решений. На проверке будут читать не только ваши объяснения о приказах, но и протоколы, которые вы подписали.';
   } else {
-    if (s.exc <= 6) e = 'За вами есть дела, слепленные из воздуха, — и вы это знали, когда их подписывали.';
-    else if (s.exc <= 11) e = 'Сфабрикованных вами эпизодов набралось на отдельный том: организации, которых не существовало, показания, которых никто не давал.';
-    else e = 'Вы стали автором целой контрреволюционной вселенной: филиалы, центры, явки, — и всё это существовало только в ваших протоколах.';
+    if (s.exc <= 16) e = 'За вами есть дела, слепленные из воздуха, — и вы это знали, когда их подписывали.';
+    else if (s.exc <= 28) e = 'Нарушений набралось на отдельный том. Среди них — дела, в которых вы сами создавали обвинение вместо того, чтобы проверять его.';
+    else e = 'Подписанных нарушений хватит на приговор вам самому. В этом счёте есть и сфабрикованные вами дела; объяснение «так требовали» не уберёт вашей подписи.';
   }
   out.push(e);
 
   let p = '';
-  if (s.susp <= 1) p = 'В отношении вас самого не было заведено ничего: вы не спорили вслух, не заступались открыто и не дружили не с теми.';
-  else if (s.susp <= 4) p = 'В вашем формуляре к тридцать девятому году лежало несколько отметок — разговоры, знакомства, отказы. Немного, но лежало.';
-  else if (s.susp <= 8) p = 'На вас завели формуляр: слишком часто вы оказывались рядом с теми, кого потом брали, и слишком часто говорили лишнее.';
+  if (s.susp <= 5) p = 'В отношении вас самого накопилось мало подозрений. По ведомственной оценке вы оставались вне разработки.';
+  else if (s.susp <= 14) p = 'В вашем формуляре лежало несколько отметок — разговоры, знакомства, отказы. Немного, но лежало.';
+  else if (s.susp <= 26) p = 'На вас завели формуляр: знакомства, отказы и заступничества складывались в отдельное дело.';
   else p = 'К концу тридцать восьмого вас разрабатывали свои же — и это было вопросом не «если», а «когда».';
   out.push(p);
 
@@ -342,19 +394,29 @@ function showChekIntro() {
   <div class="card intro">
     <div class="meta">Часть третья · 1936–1938</div>
     <h1>Особая папка</h1>
+    ${RR.illustration('folder')}
     <div class="body">
       <p>Вы — Николай Степанович Гриднев, лейтенант государственной безопасности, оперуполномоченный секретно-политического отдела областного управления НКВД. Вам тридцать два года, у вас жена, сын семи лет, комната в ведомственном доме и сейф с делами.</p>
       <p>Через ваш стол пойдут люди: секретари райкомов и комбриги, инженеры и попы, крестьяне, вернувшиеся из ссылки, поляки-железнодорожники, старые большевики и семнадцатилетние школьники. По каждому нужно решить одно: пустить дело дальше — или убрать.</p>
       <p>Наверху ждут цифр, и цифры вы дадите. Внизу остаются бумаги, и бумаги никуда не денутся. Рано или поздно кто-нибудь сядет разбирать и то и другое — и разбирать будет по вашей подписи.</p>
       <p>Вам ничего не скажут прямо, но в каждом деле есть подсказки. Кто прислал материал. Кто им интересуется. Чем оно прошито: показаниями из Москвы — или заявлением соседа, которому нужна комната. Слушайте не обвинение. Слушайте бумагу.</p>
-      <p>И откладывайте вторые экземпляры. Больше вас спасти нечему.</p>
+      <p>Помечайте карандашом строки, которые не сходятся. И откладывайте вторые экземпляры: собранные документы можно раскрыть в вашей папке под каждым делом.</p>
     </div>
-    <div class="choices"><div class="choice"><button id="play">Принять дела</button></div></div>
+    <div class="choices">${RR.resumeButton(3)}<div class="choice"><button id="play">Начать службу</button></div></div>
+    ${RR.storageNote()}
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', () => {
     CH.S = newChekState();
     show3('ck_start');
+  });
+  const resume = document.getElementById('resume');
+  if (resume) resume.addEventListener('click', () => {
+    const saved = RR.checkpoint(3);
+    if (!saved || !NODES3[saved.screen === 'result' ? saved.nextId : saved.id]) return;
+    CH.S = saved.state; CH.S.marks = CH.S.marks || {}; CH.S.paperTrail = CH.S.paperTrail || [];
+    if (saved.screen === 'result') showResult3(saved.text, saved.note, saved.nextId);
+    else show3(saved.id, true);
   });
 }
 

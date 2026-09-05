@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>1917–1922: интерактивные квесты по истории России</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 <style>
 .menu-part { border: 1px solid var(--ink); padding: 22px 24px; margin-bottom: 20px; }
 .menu-part.locked { border-color: var(--line); color: var(--muted); }
@@ -32,6 +32,7 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
     <div class="menu-part" style="margin-top:28px">
       <div class="menu-eyebrow">Часть первая · выживание</div>
       <h2>Переживите обе революции</h2>
+      <img class="menu-art" src="images/small-life.jpg" alt="Очередь у лавки в рабочем предместье" width="1536" height="1024" decoding="async">
       <p>Вы — маленький человек: путиловский рабочий, поручик, курсистка или фабрикант. Задача одна — дожить до 1922 года. Судьба бросает кости, прошлые выборы решают, какие двери открыты, а какие — только нарисованы.</p>
       <a class="menu-play" href="v1.html">Играть</a>
       <div class="menu-progress" id="progress"></div>
@@ -40,7 +41,8 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
     <div class="menu-part" id="part2">
       <div class="menu-eyebrow">Часть вторая · альтернативная история</div>
       <h2>Действующие лица</h2>
-      <p>Вы — Ленин, Николай II, Савинков, Корнилов или Махно. Реальная история — рельсы; свернуть можно только в переломных моментах, где игра честно показывает шанс и цену. В финале — ваша Россия 1922 года и справка, как всё было на самом деле.</p>
+      <img class="menu-art" src="images/turning-point.jpg" alt="Станция и расходящиеся железнодорожные пути" width="1536" height="1024" loading="lazy" decoding="async">
+      <p>Вы — Ленин, Николай II, Савинков, Корнилов или Махно. Измените ход событий — и разберитесь с тем, что получилось. Парламенту нужен хлеб, победителям — земля, вольным советам — суд над своим. В знакомых развилках после живой концовки можно выбирать исход самому.</p>
       <span id="p2action"></span>
       <div class="menu-progress" id="progress2"></div>
     </div>
@@ -48,6 +50,7 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
     <div class="menu-part" id="part3">
       <div class="menu-eyebrow">Часть третья · 1936–1938</div>
       <h2>Особая папка</h2>
+      <img class="menu-art sketch" src="images/special-folder.jpg" alt="Карандашная зарисовка папки на рабочем столе" width="1536" height="1024" loading="lazy" decoding="async">
       <p>Вы — оперуполномоченный областного управления НКВД. Через ваш стол идут дела: секретари райкомов и комбриги, попы, инженеры, крестьяне, школьники. По каждому решение одно — пустить дальше или убрать. Наверху ждут цифр, внизу остаются бумаги; в тридцать девятом кто-нибудь сядет разбирать и то и другое.</p>
       <span id="p3action"></span>
       <div class="menu-progress" id="progress3"></div>

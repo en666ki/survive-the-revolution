@@ -8,6 +8,8 @@
 const app = document.getElementById('app');
 
 let S = null; // состояние игрока
+let currentNode = null;
+let choosing = false;
 
 function newState(bgKey) {
   const bg = BACKGROUNDS[bgKey];
@@ -20,6 +22,7 @@ function newState(bgKey) {
     loc: 'petrograd',
     flags: new Set(bg.flags || []),
     log: [],
+    trail: [],
   };
 }
 
@@ -53,12 +56,15 @@ const PLACES = {
   village: 'Деревня под Тамбовом',
 };
 
-function show(id) {
+function show(id, resumed = false) {
   const node = NODES[id];
   if (!node) { app.innerHTML = `<div class="card"><p>Сцена «${esc(id)}» не найдена.</p></div>`; return; }
   if (node.redirect) { show(node.redirect(S)); return; }
-  if (node.type) { showEnding(node); return; }
-  if (node.enter) node.enter(S);
+  if (node.type) { showEnding(node, id); return; }
+  if (node.enter && !resumed) node.enter(S);
+  currentNode = id; choosing = false;
+  if (!S.trail.includes(id)) S.trail.push(id);
+  RR.save(1, {screen: 'scene', id, state: S, label: val(node.date) || 'ваша жизнь'});
 
   const text = val(node.text);
   const meta = [];
@@ -69,6 +75,8 @@ function show(id) {
   let html = `<div class="card scene">`;
   html += `<div class="meta">${meta.map(esc).join(' · ')}</div>`;
   if (node.title) html += `<h2>${esc(val(node.title))}</h2>`;
+  html += `<div class="life-status">${esc(BACKGROUNDS[S.bg].name)} · ${S.money > 1 ? 'есть сбережения' : S.money > 0 ? 'денег в обрез' : 'карманы пусты'} · ${S.conn > 0 ? 'есть к кому обратиться' : 'рассчитывать на себя'}</div>`;
+  if (RR.mastered(1, S.bg, id) && node.choices.some(c => c.roll)) html += `<p class="memory-note">Эта жизнь помнит развилку. При рискованном решении можно выбрать исход.</p>`;
   html += `<div class="body">${paras(text)}</div>`;
   html += `<div class="choices">`;
 
@@ -85,36 +93,47 @@ function show(id) {
   html += `</div></div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
+  RR.focusScene(app);
 
   app.querySelectorAll('button[data-i]').forEach(btn => {
     btn.addEventListener('click', () => pick(choices[+btn.dataset.i]));
   });
 }
 
-function pick(choice) {
+function pick(choice, outcome) {
+  if (choosing) return;
+  if (choice.roll && !outcome && RR.mastered(1, S.bg, currentNode)) {
+    RR.fate({text: val(choice.text), ...choice.roll, nodes: NODES, onChoose: x => pick(choice, x)});
+    return;
+  }
+  choosing = true;
+  RR.lockChoices(app);
   if (choice.roll) {
     // эффекты и лог самого выбора — до броска; ветка добавит свои
     if (choice.fx) choice.fx(S);
     pushLog(choice.log);
     const chance = val(choice.roll.chance);
-    rollDice(() => {
-      const branch = Math.random() < chance ? choice.roll.fail : choice.roll.success;
-      applyBranch(branch);
-    });
+    if (outcome === 'success' || outcome === 'fail') { applyBranch(choice.roll[outcome]); return; }
+    const branch = Math.random() < chance ? choice.roll.fail : choice.roll.success;
+    applyBranch(branch, true);
   } else {
     applyBranch(choice); // fx и log применит applyBranch — ровно один раз
   }
 }
 
-function applyBranch(br) {
+function applyBranch(br, animate = false) {
   if (br.fx) br.fx(S);
   pushLog(br.log);
   const result = val(br.result);
-  if (result) showResult(result, br.goto);
-  else show(br.goto);
+  const next = () => result ? showResult(result, br.goto) : show(br.goto);
+  if (animate) {
+    RR.save(1, {screen: result ? 'result' : 'transition', text: result, nextId: br.goto, state: S, label: 'последствия решения'});
+    rollDice(next);
+  } else next();
 }
 
 function showResult(text, nextId) {
+  RR.save(1, {screen: 'result', text, nextId, state: S, label: 'последствия решения'});
   const next = NODES[nextId];
   const isEnd = next && next.type;
   app.innerHTML =
@@ -151,7 +170,9 @@ const ENDING_KINDS = {
   survival: 'Вы выжили',
 };
 
-function showEnding(node) {
+function showEnding(node, id) {
+  RR.remember(1, S.bg, S.trail, id, node.type !== 'death');
+  RR.clear(1);
   if (node.type !== 'death') {
     try {
       localStorage.setItem('rr_survived', '1');
@@ -164,7 +185,7 @@ function showEnding(node) {
   html += `<h2>${esc(val(node.title))}</h2>`;
   html += `<div class="body">${paras(text)}</div>`;
   if (node.note) {
-    html += `<div class="note"><div class="note-title">Историческая справка</div>${paras(val(node.note))}</div>`;
+    html += RR.details('Историческая справка', paras(val(node.note)));
   }
   if (S.log.length) {
     html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
@@ -187,16 +208,26 @@ function showIntro() {
   <div class="card intro">
     <div class="meta">Интерактивный квест по истории России</div>
     <h1>Переживите обе революции</h1>
+    ${RR.illustration('life')}
     <div class="body">
       <p>Февраль 1917 года — год 1922-й. Пять лет, за которые страна переменит три власти, две столицы и одну орфографию.</p>
-      <p>Вам предлагается набор ситуаций, в каждой из которых можно сделать выбор. От выбора зависит ваша дальнейшая судьба — но не только от него: у судьбы есть свои кости, и она охотно их бросает.</p>
-      <p>Прошлое имеет значение. Кем вы были до революции — определяет, что вам позволено после неё. С деньгами и связями можно уехать; без них придётся выживать на месте.</p>
-      <p>Делайте что должно, и будь что будет. Это революция!</p>
+      <p>Кому открыть дверь. На что выменять муку. С кем уехать, когда последнему пароходу уже дают ход. Большие события доберутся до вас через маленькие решения.</p>
+      <p>Деньги, знакомства и прошлые поступки открывают разные выходы. Иногда придётся рискнуть. Доживите до конца — и в следующей жизни за этого же персонажа сможете выбирать исход знакомых случайностей.</p>
     </div>
-    <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
+    <div class="choices">${RR.resumeButton(1)}<div class="choice"><button id="play">Начать новую жизнь</button></div></div>
+    ${RR.storageNote()}
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
+  const resume = document.getElementById('resume');
+  if (resume) resume.addEventListener('click', () => {
+    const saved = RR.checkpoint(1);
+    if (!saved || !BACKGROUNDS[saved.state.bg] || !NODES[saved.screen === 'scene' ? saved.id : saved.nextId]) return;
+    S = saved.state; S.trail = S.trail || [];
+    if (saved.screen === 'result') showResult(saved.text, saved.nextId);
+    else if (saved.screen === 'transition') show(saved.nextId);
+    else show(saved.id, true);
+  });
 }
 
 function showPick() {
@@ -205,7 +236,8 @@ function showPick() {
   <div class="body"><p>Зима выдалась лютая, хлебные хвосты стоят с ночи, на заводах глухо ропщут. Империя доживает последние дни — но об этом пока никто не знает. А вы живёте свою жизнь. Какую?</p></div>
   <div class="choices">`;
   Object.entries(BACKGROUNDS).forEach(([key, bg]) => {
-    html += `<div class="choice bg-choice"><button data-bg="${key}"><span class="bg-name">${bg.name}</span><span class="bg-desc">${bg.desc}</span></button></div>`;
+    const m = RR.memory(1, key);
+    html += `<div class="choice bg-choice"><button data-bg="${key}"><span class="bg-name">${bg.name}</span><span class="bg-desc">${bg.desc}</span>${m.won ? '<span class="choice-sub">Вы уже выживали этой судьбой</span>' : ''}</button></div>`;
   });
   html += `</div></div>`;
   app.innerHTML = html;

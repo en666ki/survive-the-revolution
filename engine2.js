@@ -10,10 +10,12 @@ const app = document.getElementById('app');
 
 let S = null; // {camp, vl, fame, flags, log}
 let W = null; // состояние мира
+let currentNode = null;
+let choosing = false;
 
 function newState(campKey) {
   const c = CAMPAIGNS[campKey];
-  return { camp: campKey, vl: c.vl, fame: c.fame, flags: new Set(), log: [] };
+  return { camp: campKey, vl: c.vl, fame: c.fame, flags: new Set(), log: [], trail: [], dispatches: [], commitments: {} };
 }
 
 const has = f => S.flags.has(f);
@@ -42,12 +44,16 @@ function statsHtml(node) {
   return `<div class="stats">${bits.join('<span>·</span>')}</div>`;
 }
 
-function show(id) {
+function show(id, resumed = false) {
   const node = NODES2[id];
   if (!node) { app.innerHTML = `<div class="card"><p>Сцена «${esc(id)}» не найдена.</p></div>`; return; }
+  if (AFTERMATH_ENTRIES[id]) { S.victoryEnding = id; show(AFTERMATH_ENTRIES[id]); return; }
   if (node.redirect) { show(node.redirect(S, W)); return; }
-  if (node.type) { showEnding(node); return; }
-  if (node.enter) node.enter(S, W);
+  if (node.type) { showEnding(node, id); return; }
+  if (node.enter && !resumed) node.enter(S, W);
+  currentNode = id; choosing = false;
+  if (!S.trail.includes(id)) S.trail.push(id);
+  RR.save(2, {screen: 'scene', id, state: S, world: W, label: CAMPAIGNS[S.camp].name});
 
   const text = val(node.text);
   const meta = [];
@@ -58,7 +64,12 @@ function show(id) {
   html += `<div class="meta">${meta.map(esc).join(' · ')}</div>`;
   html += statsHtml(node);
   if (node.title) html += `<h2>${esc(val(node.title))}</h2>`;
+  if (node.art) html += RR.illustration(node.art, true);
+  if (node.alt) html += `<div class="alt-label">Ваша ветвь истории · ${esc(node.alt)}</div>`;
   html += `<div class="body">${paras(text)}</div>`;
+  if (node.stakes) html += `<div class="stakes">${esc(val(node.stakes))}</div>`;
+  if (RR.mastered(2, S.camp, id) && node.choices.some(c => c.roll || c.bif)) html += `<p class="memory-note">Знакомая развилка: можно выбрать исход или оставить бросок судьбе.</p>`;
+  if (S.dispatches.length) html += RR.details('Что уже изменилось · ' + S.dispatches.length, `<ul class="dispatches">${S.dispatches.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
   html += `<div class="choices">`;
 
   const choices = node.choices.filter(c => !c.when || c.when(S, W));
@@ -76,6 +87,8 @@ function show(id) {
     const cost = c.bif ? (c.bif.cost || 0) : 0;
     const poor = c.bif && S.vl < cost && i !== emergencyIdx;
     const locked = (c.req && !c.req(S, W)) || poor;
+    const influenceDelta = c.fx && typeof c.fx.influence === 'number' ? clamp(S.vl + c.fx.influence, 0, 10) - S.vl : 0;
+    const effectHint = influenceDelta ? `<div class="choice-hint">Влияние: ${influenceDelta > 0 ? '+' : '−'}${Math.abs(influenceDelta)}</div>` : '';
     const bifMeta = c.bif
       ? `<div class="bif-meta">⚖ Переломный момент · шанс ~${Math.round(val(c.bif.chance) * 100)}%` +
         (i === emergencyIdx && S.vl < cost ? ' · цена: всё оставшееся влияние' : (cost ? ` · цена: ${cost} влияния` : '')) + `</div>`
@@ -85,52 +98,67 @@ function show(id) {
       html += `<div class="choice locked ${c.bif ? 'bif' : ''}"><button disabled>${val(c.text)}</button>${bifMeta}` +
               `<div class="locked-why">${why}</div></div>`;
     } else {
-      html += `<div class="choice ${c.bif ? 'bif' : ''}"><button data-i="${i}">${val(c.text)}</button>${bifMeta}</div>`;
+      html += `<div class="choice ${c.bif ? 'bif' : ''}"><button data-i="${i}">${val(c.text)}</button>${bifMeta}${effectHint}</div>`;
     }
   });
   html += `</div></div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
+  RR.focusScene(app);
 
   app.querySelectorAll('button[data-i]').forEach(btn => {
     btn.addEventListener('click', () => pick(choices[+btn.dataset.i]));
   });
 }
 
-function pick(choice) {
+function pick(choice, outcome) {
+  if (choosing) return;
+  const random = choice.bif || choice.roll;
+  if (random && !outcome && RR.mastered(2, S.camp, currentNode)) {
+    RR.fate({text: val(choice.text), ...random, nodes: NODES2, onChoose: x => pick(choice, x)});
+    return;
+  }
+  choosing = true;
+  RR.lockChoices(app);
   if (choice.bif || choice.roll) {
+    const before = {...W};
     if (choice.fx) choice.fx(S, W);
+    recordWorldChanges(before);
     pushLog(choice.log);
   }
   if (choice.bif) {
     // переломный момент: chance = шанс УСПЕХА против инерции истории
     S.vl = clamp(S.vl - (choice.bif.cost || 0), 0, 10);
     const chance = val(choice.bif.chance);
-    rollDice(() => {
-      const branch = Math.random() < chance ? choice.bif.success : choice.bif.fail;
-      applyBranch(branch);
-    }, 'История сопротивляется…');
+    if (outcome === 'success' || outcome === 'fail') { applyBranch(choice.bif[outcome]); return; }
+    const branch = Math.random() < chance ? choice.bif.success : choice.bif.fail;
+    applyBranch(branch, 'История сопротивляется…');
   } else if (choice.roll) {
     // обычный бросок: chance = шанс беды
     const chance = val(choice.roll.chance);
-    rollDice(() => {
-      const branch = Math.random() < chance ? choice.roll.fail : choice.roll.success;
-      applyBranch(branch);
-    }, 'Судьба бросает кости…');
+    if (outcome === 'success' || outcome === 'fail') { applyBranch(choice.roll[outcome]); return; }
+    const branch = Math.random() < chance ? choice.roll.fail : choice.roll.success;
+    applyBranch(branch, 'Судьба бросает кости…');
   } else {
     applyBranch(choice);
   }
 }
 
-function applyBranch(br) {
+function applyBranch(br, animationLabel) {
+  const before = {...W};
   if (br.fx) br.fx(S, W);
+  recordWorldChanges(before);
   pushLog(br.log);
   const result = val(br.result);
-  if (result) showResult(result, br.goto);
-  else show(br.goto);
+  const next = () => result ? showResult(result, br.goto) : show(br.goto);
+  if (animationLabel) {
+    RR.save(2, {screen: result ? 'result' : 'transition', text: result, nextId: br.goto, state: S, world: W, label: CAMPAIGNS[S.camp].name});
+    rollDice(next, animationLabel);
+  } else next();
 }
 
 function showResult(text, nextId) {
+  RR.save(2, {screen: 'result', text, nextId, state: S, world: W, label: CAMPAIGNS[S.camp].name});
   const next = NODES2[nextId];
   const isEnd = next && next.type;
   app.innerHTML =
@@ -159,7 +187,9 @@ function rollDice(done, label) {
 
 const ENDING_KINDS = { death: 'Вы погибли', emigration: 'Вы в эмиграции', survival: 'Вы дожили' };
 
-function showEnding(node) {
+function showEnding(node, id) {
+  RR.remember(2, S.camp, S.trail, id, node.type !== 'death');
+  RR.clear(2);
   // третья часть открывается тем, кто провёл всех пятерых без гибели
   if (node.type !== 'death') {
     try {
@@ -174,12 +204,13 @@ function showEnding(node) {
   html += `<h2>${esc(val(node.title))}</h2>`;
   html += `<div class="body">${paras(text)}</div>`;
   html += `<div class="world"><div class="note-title">Ваша Россия, 1922</div>${paras(ep.text)}</div>`;
-  html += `<div class="world"><div class="note-title">Итоги Великой войны</div>${paras(warSummary(W))}</div>`;
+  if (S.dispatches.length) html += RR.details('Ваши решения изменили страну', `<ul class="dispatches">${S.dispatches.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`, true);
+  html += RR.details('Итоги Великой войны', paras(warSummary(W)));
   if (ep.real) {
-    html += `<div class="realhist"><div class="note-title">Как было на самом деле</div>${paras(ep.real)}</div>`;
+    html += RR.details('Как было на самом деле', paras(ep.real));
   }
   if (node.note) {
-    html += `<div class="note"><div class="note-title">Историческая справка</div>${paras(val(node.note))}</div>`;
+    html += RR.details('Историческая справка', paras(val(node.note)));
   }
   if (S.log.length) {
     html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
@@ -226,16 +257,27 @@ function showIntro() {
   <div class="card intro">
     <div class="meta">Альтернативная история · 1917–1922</div>
     <h1>Действующие лица</h1>
+    ${RR.illustration('history')}
     <div class="body">
-      <p>В первой игре вы выживали. Теперь вы — один из тех, кто решает.</p>
-      <p>Реальная история — это рельсы: события катятся по ним сами. Свернуть можно только в переломные моменты, отмеченные знаком ⚖. Игра честно показывает шанс успеха и цену попытки — влияние, которое копится в обычных решениях и тратится в судьбоносных.</p>
-      <p>История сопротивляется. Но иногда — поддаётся.</p>
-      <p>В конце вы увидите, какой стала ваша Россия к 1922 году — и как всё было на самом деле.</p>
+      <p>Вы выиграли голосование. Взяли столицу. Сохранили корону. У двери уже ждут те, кому вы что-то обещали.</p>
+      <p>Пять кампаний о власти и её цене. В переломных моментах ⚖ вы тратите влияние и рискуете. За удавшейся альтернативой следуют собственные задачи: хлеб для коалиции, земля для победителей, суд над своим командиром.</p>
+      <p>Дойдите до живой концовки — и при следующем прохождении за этого человека сможете выбирать оба исхода знакомых случайных развилок. Новую историю придётся освоить самому.</p>
     </div>
-    <div class="choices"><div class="choice"><button id="play">Играть</button></div></div>
+    <div class="choices">${RR.resumeButton(2)}<div class="choice"><button id="play">Выбрать действующее лицо</button></div></div>
+    ${RR.storageNote()}
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
+  const resume = document.getElementById('resume');
+  if (resume) resume.addEventListener('click', () => {
+    const saved = RR.checkpoint(2);
+    if (!saved || !saved.world || !CAMPAIGNS[saved.state.camp] || !NODES2[saved.screen === 'scene' ? saved.id : saved.nextId]) return;
+    S = saved.state; W = saved.world;
+    S.trail = S.trail || []; S.dispatches = S.dispatches || []; S.commitments = S.commitments || {};
+    if (saved.screen === 'result') showResult(saved.text, saved.nextId);
+    else if (saved.screen === 'transition') show(saved.nextId);
+    else show(saved.id, true);
+  });
 }
 
 function showPick() {
@@ -244,10 +286,12 @@ function showPick() {
   <div class="body"><p>Пять человек, пять точек приложения силы. У каждого — своё окно возможностей и своя цена ошибки.</p></div>
   <div class="choices">`;
   Object.entries(CAMPAIGNS).forEach(([key, c]) => {
+    const m = RR.memory(2, key);
     html += `<div class="choice bg-choice"><button data-c="${key}">` +
             `<span class="who-name">${c.name}</span>` +
             `<span class="who-sub">${c.sub}</span>` +
-            `<span class="who-desc">${c.desc}</span></button></div>`;
+            `<span class="who-desc">${c.desc}</span>` +
+            (m.won ? `<span class="choice-sub">${m.legacy ? 'Старое прохождение сохранено · исходные развилки открыты' : 'Живая концовка достигнута · знакомых сцен: ' + m.seen.length}</span>` : '') + `</button></div>`;
   });
   html += `</div></div>`;
   app.innerHTML = html;
