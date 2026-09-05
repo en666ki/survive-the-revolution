@@ -83,6 +83,41 @@ function gloss3(s) {
   return (typeof annotate === 'function') ? annotate(e) : e;
 }
 
+// The photograph belongs to the file, including cases with several people.
+const DOSSIER_PHOTOS = {
+  ck_c1: ['zemtsov', 'Земцов'], ck_c2: ['lanskoy', 'Ланской'],
+  ck_c3: ['samoylov', 'Самойлов'], ck_c4: ['verhovtsev', 'Инженер Верховцев'],
+  ck_c5: ['dudkin', 'Дудкин'], ck_c6: ['yurasov', 'Юрасов'],
+  ck_c7: ['sviridov', 'Свиридов'], ck_c8: ['ternovskaya', 'Терновская'],
+  ck_c9: ['erofeev', 'Ерофеев'], ck_c10: ['pokrovsky', 'Покровский'],
+  ck_c11: ['schoolboys', 'Школьники'], ck_c12: ['tyukavin', 'Тюкавин'],
+  ck_c13: ['kovalsky', 'Ковальский'], ck_c14: ['shults', 'Шульц'],
+  ck_c15: ['polozov', 'Полозов'], ck_c16: ['berzinya', 'Берзиня'],
+  ck_c17: ['galushko', 'Галушко'], ck_c18: ['tarasevich', 'Тарасевич'],
+  ck_c19: ['tishchenko', 'Тищенко'], ck_c21: ['drobys-kustov', 'Дробыш и Кустов'],
+};
+
+function dossierPhoto(id, compact = false) {
+  const photo = DOSSIER_PHOTOS[id];
+  if (!photo) return '';
+  const src = `images/dossiers/${id.replace('_', '-')}-${photo[0]}.jpg`;
+  return `<figure class="dossier-photo${compact ? ' compact' : ''}"><a href="${src}" data-photo aria-label="Рассмотреть фотокарточку: ${photo[1]}"><img src="${src}" alt="Фотокарточка из дела: ${photo[1]}" width="1536" height="1024"></a><figcaption><span>${photo[1]}</span><span>Рассмотреть ↗</span></figcaption></figure>`;
+}
+
+function bindDossierPhotos() {
+  app3.querySelectorAll('[data-photo]').forEach(link => link.addEventListener('click', event => {
+    event.preventDefault();
+    const dialog = document.createElement('dialog');
+    dialog.className = 'photo-viewer';
+    dialog.setAttribute('aria-label', link.getAttribute('aria-label'));
+    dialog.innerHTML = `<form method="dialog"><button aria-label="Закрыть фотокарточку">Закрыть ×</button></form><img src="${link.getAttribute('href')}" alt="${RR.escape(link.querySelector('img').alt)}"><p>Фотографическое приложение к делу</p>`;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => { dialog.remove(); link.focus(); });
+    dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+    dialog.showModal();
+  }));
+}
+
 function fileHtml(f) {
   const rows = [];
   // прочерк «—» в карточке — это «графа неприменима», а не значение: не показываем
@@ -97,7 +132,7 @@ function fileHtml(f) {
   // «№ 4711» → «Следственное дело № 4711»; «справка на тройку № 1147» — как есть
   const no = f.no || '№ —';
   const head = /^№/.test(no) ? 'Следственное дело ' + no : no;
-  let html = `<div class="dossier"><div class="d-head">${esc3(head)}</div>${rows.join('')}`;
+  let html = `<section class="dossier" aria-label="Материалы дела"><div class="d-head"><span>${esc3(head)}</span><span class="d-stamp">Секретно</span></div><div class="dossier-identity"><div class="dossier-fields">${rows.join('')}</div>${dossierPhoto(currentCase)}</div>`;
   if (f.evidence && f.evidence.length) {
     html += `<div class="f-row f-block"><span class="f-key">В деле имеется</span><span class="f-val"><ul>` +
       f.evidence.map((e, i) => {
@@ -105,7 +140,7 @@ function fileHtml(f) {
         return `<li class="evidence${marked ? ' marked' : ''}"><button class="pencil-mark" data-evidence="${i}" aria-pressed="${marked}" aria-label="Пометить карандашом: ${RR.escape(chVal(e))}">${marked ? '✓' : '○'}</button><span>${gloss3(chVal(e))}</span></li>`;
       }).join('') + `</ul><p class="dossier-help">Кружок у строки — ваша пометка карандашом. Она не меняет решение по делу.</p></span></div>`;
   }
-  html += `</div>`;
+  html += `</section>`;
   return html;
 }
 
@@ -132,9 +167,8 @@ function show3(id, resumed = false) {
   html += `<div class="meta">${meta.map(esc3).join(' · ')}</div>`;
   html += chStats();
   if (node.title) html += `<h2>${esc3(chVal(node.title))}</h2>`;
-  if (['ck_ch3', 'ck_p6'].includes(id)) html += RR.illustration('folder', true);
   if (node.file) html += fileHtml(node.file);
-  html += `<div class="body">${paras3(chVal(node.text))}</div>`;
+  html += `<div class="case-reading"><div class="body">${paras3(chVal(node.text))}</div>`;
   html += folderHtml();
   if (node.ask) html += `<div class="ask">${esc3(chVal(node.ask))}</div>`;
   html += `<div class="choices">`;
@@ -152,8 +186,9 @@ function show3(id, resumed = false) {
               (c.hint ? `<div class="choice-hint">${chVal(c.hint)}</div>` : '') + `</div>`;
     }
   });
-  html += `</div></div>`;
+  html += `</div></div></div>`;
   app3.innerHTML = html;
+  bindDossierPhotos();
   window.scrollTo(0, 0);
   RR.focusScene(app3);
   app3.querySelectorAll('[data-evidence]').forEach(btn => btn.addEventListener('click', () => {
@@ -391,10 +426,11 @@ function showChekIntro() {
   CH.S = null;
   if (!gate3Ok()) { showChekGate(); return; }
   app3.innerHTML = `
-  <div class="card intro">
-    <div class="meta">Часть третья · 1936–1938</div>
-    <h1>Особая папка</h1>
-    ${RR.illustration('folder')}
+  <div class="card intro archive-intro">
+    <div class="archive-cover"><div class="meta">Часть третья · 1936–1938</div>
+    <h1>Особая папка</h1><p class="archive-subtitle">Хранить лично.<br>Решать по существу.</p><span class="archive-seal" aria-hidden="true">Лично</span></div>
+    <div class="archive-intro-content">
+    <div class="archive-contact-sheet">${dossierPhoto('ck_c1', true)}${dossierPhoto('ck_c8', true)}</div>
     <div class="body">
       <p>Вы — Николай Степанович Гриднев, лейтенант государственной безопасности, оперуполномоченный секретно-политического отдела областного управления НКВД. Вам тридцать два года, у вас жена, сын семи лет, комната в ведомственном доме и сейф с делами.</p>
       <p>Через ваш стол пойдут люди: секретари райкомов и комбриги, инженеры и попы, крестьяне, вернувшиеся из ссылки, поляки-железнодорожники, старые большевики и семнадцатилетние школьники. По каждому нужно решить одно: пустить дело дальше — или убрать.</p>
@@ -405,7 +441,8 @@ function showChekIntro() {
     <div class="choices">${RR.resumeButton(3)}<div class="choice"><button id="play">Начать службу</button></div></div>
     ${RR.storageNote()}
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
-  </div>`;
+  </div></div>`;
+  bindDossierPhotos();
   document.getElementById('play').addEventListener('click', () => {
     CH.S = newChekState();
     show3('ck_start');

@@ -38,10 +38,16 @@ const VL_WORDS = ['ничтожное', 'ничтожное', 'скромное'
 const FAME_WORDS = ['в тени', 'в узких кругах', 'на слуху', 'на первых полосах'];
 
 function statsHtml(node) {
-  const bits = [];
-  bits.push(`Влияние: <b>${VL_WORDS[S.vl]} (${S.vl})</b>`);
-  bits.push(`Известность: <b>${FAME_WORDS[S.fame]}</b>`);
-  return `<div class="stats">${bits.join('<span>·</span>')}</div>`;
+  return `<div class="resource-sheet"><div class="note-title">${esc(CAMPAIGNS[S.camp].name)}</div>` +
+    `<div class="resource-row"><span>Влияние</span><b>${S.vl}<small> / 10</small></b></div>` +
+    `<div class="influence-meter" role="meter" aria-label="Влияние" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${S.vl}">${Array.from({length: 10}, (_, i) => `<i class="${i < S.vl ? 'filled' : ''}"></i>`).join('')}</div>` +
+    `<p>${VL_WORDS[S.vl]} · тратится в переломные моменты</p><div class="resource-row"><span>Известность</span></div><p>${FAME_WORDS[S.fame]}</p></div>`;
+}
+
+function historyAside(node) {
+  return `<aside class="scene-aside">${node.art ? `<div class="scene-art">${RR.illustration(node.art, true)}</div>` : ''}${statsHtml(node)}` +
+    (S.dispatches.length ? RR.details('Сводка перемен · ' + S.dispatches.length, `<ul class="dispatches">${S.dispatches.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`) : '') +
+    (S.log.length ? RR.details('Хроника решений · ' + S.log.length, `<ol class="journey-log">${S.log.map(l => `<li>${l}</li>`).join('')}</ol>`) : '') + `</aside>`;
 }
 
 function show(id, resumed = false) {
@@ -61,16 +67,14 @@ function show(id, resumed = false) {
   if (node.place) meta.push(val(node.place));
 
   let html = `<div class="card scene">`;
-  html += `<div class="meta">${meta.map(esc).join(' · ')}</div>`;
-  html += statsHtml(node);
+  html += `<header class="scene-header"><div class="meta">${meta.map(esc).join(' · ')}</div>`;
   if (node.title) html += `<h2>${esc(val(node.title))}</h2>`;
-  if (node.art) html += RR.illustration(node.art, true);
   if (node.alt) html += `<div class="alt-label">Ваша ветвь истории · ${esc(node.alt)}</div>`;
+  html += `</header><div class="scene-layout"><div class="scene-main">`;
   html += `<div class="body">${paras(text)}</div>`;
   if (node.stakes) html += `<div class="stakes">${esc(val(node.stakes))}</div>`;
   if (RR.mastered(2, S.camp, id) && node.choices.some(c => c.roll || c.bif)) html += `<p class="memory-note">Знакомая развилка: можно выбрать исход или оставить бросок судьбе.</p>`;
-  if (S.dispatches.length) html += RR.details('Что уже изменилось · ' + S.dispatches.length, `<ul class="dispatches">${S.dispatches.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
-  html += `<div class="choices">`;
+  html += `<div class="decision-label">Ваше решение</div><div class="choices">`;
 
   const choices = node.choices.filter(c => !c.when || c.when(S, W));
   // аварийный клапан: если ВСЕ варианты заперты (не хватает влияния),
@@ -101,7 +105,7 @@ function show(id, resumed = false) {
       html += `<div class="choice ${c.bif ? 'bif' : ''}"><button data-i="${i}">${val(c.text)}</button>${bifMeta}${effectHint}</div>`;
     }
   });
-  html += `</div></div>`;
+  html += `</div></div>${historyAside(node)}</div></div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
   RR.focusScene(app);
@@ -162,7 +166,7 @@ function showResult(text, nextId) {
   const next = NODES2[nextId];
   const isEnd = next && next.type;
   app.innerHTML =
-    `<div class="card result"><div class="body">${paras(text)}</div>` +
+    `<div class="card result"><div class="meta">Последствия решения</div><div class="body">${paras(text)}</div>` +
     `<div class="choices"><div class="choice"><button id="go">${isEnd ? 'Что же дальше?' : 'Дальше'}</button></div></div></div>`;
   window.scrollTo(0, 0);
   document.getElementById('go').addEventListener('click', () => show(nextId));
@@ -213,8 +217,7 @@ function showEnding(node, id) {
     html += RR.details('Историческая справка', paras(val(node.note)));
   }
   if (S.log.length) {
-    html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
-            S.log.map(l => `<li>${l}</li>`).join('') + `</ul></div>`;
+    html += RR.details('Ваш путь · ' + S.log.length + ' записей', `<ol class="journey-log">${S.log.map(l => `<li>${l}</li>`).join('')}</ol>`);
   }
   html += `<div class="choices"><div class="choice"><button id="again">Переиграть историю ещё раз</button></div>` +
           `<div class="choice"><button id="tomenu">Вернуться в меню</button></div></div>`;
@@ -257,7 +260,7 @@ function showIntro() {
   <div class="card intro">
     <div class="meta">Альтернативная история · 1917–1922</div>
     <h1>Действующие лица</h1>
-    ${RR.illustration('history')}
+    <div class="intro-layout"><div class="intro-copy">
     <div class="body">
       <p>Вы выиграли голосование. Взяли столицу. Сохранили корону. У двери уже ждут те, кому вы что-то обещали.</p>
       <p>Пять кампаний о власти и её цене. В переломных моментах ⚖ вы тратите влияние и рискуете. За удавшейся альтернативой следуют собственные задачи: хлеб для коалиции, земля для победителей, суд над своим командиром.</p>
@@ -265,6 +268,7 @@ function showIntro() {
     </div>
     <div class="choices">${RR.resumeButton(2)}<div class="choice"><button id="play">Выбрать действующее лицо</button></div></div>
     ${RR.storageNote()}
+    </div><aside class="intro-art">${RR.illustration('history')}<p class="art-caption">Одна страна. Пять направлений истории.</p></aside></div>
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
@@ -284,7 +288,7 @@ function showPick() {
   let html = `<div class="card scene"><div class="meta">Пролог · выбор роли</div>
   <h2>Кем вы вошли в историю?</h2>
   <div class="body"><p>Пять человек, пять точек приложения силы. У каждого — своё окно возможностей и своя цена ошибки.</p></div>
-  <div class="choices">`;
+  <div class="choices role-picker">`;
   Object.entries(CAMPAIGNS).forEach(([key, c]) => {
     const m = RR.memory(2, key);
     html += `<div class="choice bg-choice"><button data-c="${key}">` +

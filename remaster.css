@@ -1,0 +1,59 @@
+/* Three volumes of one edition. Layout is kept separate from game rules. */
+:root{--paper:#f1ebde;--ink:#292820;--accent:#873f32;--muted:#706a5e;--line:#c8bdab;--desk:#d5cbbb}
+body{padding:0 28px 64px;background:var(--desk);background-image:repeating-linear-gradient(93deg,transparent 0 3px,#ffffff07 3px 4px);font-size:19px;line-height:1.65}
+body.mode-2{--desk:#bdc5c2;--paper:#eff0e6;--accent:#495f59;--line:#bdc8bf;--muted:#606e65}
+body.mode-3{--desk:#454b41;--paper:#eae4d5;--accent:#833e32;--line:#c3b8a3;--muted:#726957}
+a{color:inherit;text-underline-offset:4px}
+.edition-bar{max-width:1200px;margin:auto;min-height:88px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #655b4b40;font:12px/1.4 'Courier New',monospace;letter-spacing:.1em;text-transform:uppercase}
+.edition-brand{font:24px/1 Georgia,serif;letter-spacing:-1px;text-decoration:none;white-space:nowrap}
+.edition-brand span{color:var(--accent)}
+.edition-label{font-size:11px;letter-spacing:.16em}
+.mode-3>.edition-bar{color:#eee8da;border-bottom-color:#eee8da35}.mode-3 .edition-brand span{color:#d29b7c}
+.edition-nav{display:flex;align-items:center;gap:20px}.edition-nav a{text-decoration:none;padding:10px 0}.edition-nav a:hover{text-decoration:underline}
+#app{max-width:1120px;margin:36px auto 0}
+.card{background:var(--paper);padding:clamp(24px,4.5vw,60px);box-shadow:0 2px 2px #29251a15,0 20px 60px #29251a12;border:1px solid #766b5520;position:relative}
+.meta{font:11px/1.7 'Courier New',monospace;letter-spacing:.14em;margin-bottom:24px;padding-bottom:14px}
+h1{font-size:clamp(38px,4.7vw,62px);letter-spacing:-.035em;line-height:1.06;margin-bottom:28px}
+h2{font-size:clamp(30px,3.5vw,44px);letter-spacing:-.025em;line-height:1.13}
+.body p{margin-bottom:1em}.body p:last-child{margin-bottom:0}
+.intro .body p{font-size:1em}.intro .body p:first-child{font-size:1.12em}
+.illustration img{height:auto;max-width:100%;border:0}.illustration{margin:0}.intro>.illustration{max-width:none}
+.choices{counter-reset:decision;margin-top:30px}.choice{counter-increment:decision;margin-bottom:12px}
+.choice button{position:relative;background:#ffffff24;border-color:var(--line);padding:17px 22px;font-size:17px;transition:background .15s,border-color .15s,transform .15s;border-left:3px solid var(--accent)}
+.choice button:hover:not(:disabled){background:#ffffff70;color:var(--ink);border-color:var(--accent);transform:translateX(3px)}
+.choice button:disabled{opacity:.72}.choice.locked button{border-left-color:var(--line);color:var(--muted)}
+.locked-why,.choice-hint,.bif-meta{font-size:13px}
+.reading-note{font-size:15px;border-top:1px solid var(--line);margin-top:24px}.reading-note summary{padding:14px 0}.reading-note[open]{padding-bottom:8px}
+.path{font-size:14px}.save-note{font:11px/1.7 'Courier New',monospace;margin-top:22px}
+.world,.realhist,.note{background:#ffffff25;border-color:var(--line)}
+.ending,.result{max-width:850px;margin:0 auto}.result{padding-top:65px;padding-bottom:65px}.result:not(:has(>.meta))::before{content:'ПОСЛЕДСТВИЯ РЕШЕНИЯ';display:block;font:11px 'Courier New',monospace;letter-spacing:.17em;color:var(--accent);margin-bottom:28px}
+.ending.death{--ink:#ece4d5;--muted:#bdb39f;--line:#514b40;margin:0 auto;padding:clamp(24px,4.5vw,60px);background:#272922;color:var(--ink)}
+.ending.death .choice button:hover{background:#ece4d5;color:#272922}.ending .path{max-height:360px;overflow:auto;padding-right:10px}
+.fate-dialog{box-shadow:0 30px 100px #0006}.fate-dialog h2{font-size:34px}
+.site-footer{max-width:1120px;margin:28px auto 0;display:flex;justify-content:space-between;gap:20px;font:11px/1.6 'Courier New',monospace;color:var(--muted)}
+.mode-3>.site-footer{color:#ccc9bc}
+.skip-link{position:fixed;left:18px;top:-100px;background:var(--paper);padding:10px;z-index:100}.skip-link:focus{top:10px}
+/* Contents page: generous image area preserves the complete paintings. */
+.menu-page #app{max-width:1200px;margin-top:0}.menu-page{--desk:#e3dccd}
+.cover-heading{padding:62px 0 44px;display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:end;border-bottom:3px double var(--ink)}
+.cover-heading .meta{border:0;padding:0;margin-bottom:18px}.cover-heading h1{font-size:clamp(56px,8vw,108px);margin:0;line-height:.94}.cover-heading h1 em{font-weight:normal;color:var(--accent)}
+.cover-intro{font-size:17px;line-height:1.65;padding-bottom:5px}.cover-intro small{display:block;margin-top:20px;font:11px 'Courier New',monospace;text-transform:uppercase;letter-spacing:.1em}
+.contents-line{display:flex;justify-content:space-between;padding:17px 0;font:11px 'Courier New',monospace;letter-spacing:.12em;text-transform:uppercase}
+.menu-part{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0;margin:24px 0 40px;background:var(--paper);box-shadow:0 12px 35px #4336240a;border:1px solid #8c7f6630}
+.menu-picture{padding:24px;display:flex;flex-direction:column;justify-content:center;position:relative;background:#d1c5ad25}
+.menu-art{display:block;width:100%;height:auto;object-fit:contain;margin:0;border:0}
+.menu-picture figcaption{font:11px/1.6 'Courier New',monospace;color:var(--muted);margin-top:12px;display:flex;justify-content:space-between;gap:16px}
+.menu-copy{padding:clamp(24px,4vw,48px);position:relative}.menu-eyebrow{font:11px/1.6 'Courier New',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.menu-copy h2{font-size:clamp(32px,3.8vw,48px);margin-bottom:20px}.menu-copy p{font-size:17px;line-height:1.65;margin-bottom:24px}
+.menu-number{font:italic 42px Georgia,serif;color:var(--accent);display:block;margin-bottom:20px}
+.menu-play{display:inline-block;background:var(--ink);color:var(--paper);padding:13px 24px;font:14px 'Courier New',monospace;text-decoration:none;border:1px solid var(--ink)}
+.menu-play::after{content:' ↗';margin-left:18px}.menu-play:hover{background:var(--accent);border-color:var(--accent)}
+.menu-progress{font:11px/1.9 'Courier New',monospace;color:var(--muted);padding-top:18px;margin-top:20px;border-top:1px solid var(--line)}
+.menu-progress b{color:var(--ink);font-weight:normal}.menu-lock{font:13px/1.7 'Courier New',monospace;color:var(--muted);padding:15px 0;border-top:1px dashed var(--line)}
+.menu-part:nth-of-type(2){--paper:#e9eee6;--accent:#495f59}.menu-part:nth-of-type(2) .menu-picture{order:2}
+.menu-folder{--paper:#e5ddcc;--accent:#80392d}.folder-display{min-height:360px;padding:38px;background:#c1b291;transform:rotate(-2deg);border:1px solid #897857;box-shadow:4px 8px 0 #b7a685,8px 14px 20px #4f413822}
+.folder-display::before{content:'ОСОБАЯ ПАПКА';display:block;font:13px 'Courier New',monospace;letter-spacing:.2em;border-bottom:1px solid #8e7c5f;padding-bottom:20px}
+.folder-display img{width:100%;height:auto;display:block;transform:rotate(3deg);margin:30px 0 22px;box-shadow:1px 4px 8px #45382b35}.folder-display span{font:12px 'Courier New',monospace;display:block;text-align:right}
+.edition-note{padding:12px 0 40px;max-width:750px;font-size:15px;color:var(--muted)}
+@media(max-width:800px){body{padding:0 16px 40px}.edition-bar{min-height:76px;flex-wrap:wrap;padding:16px 0;gap:12px}.edition-label{display:none}.edition-nav{gap:14px}#app{margin-top:20px}.cover-heading{grid-template-columns:1fr;padding-top:40px;gap:25px}.cover-intro{max-width:500px}.menu-part{grid-template-columns:1fr}.menu-part:nth-of-type(2) .menu-picture{order:0}.menu-picture{padding:18px}.menu-copy{padding:28px}.menu-copy .menu-number{position:absolute;right:26px;top:18px;opacity:.35}.menu-copy h2{max-width:85%}.folder-display{max-width:450px;min-height:0;margin:12px auto}.site-footer{flex-wrap:wrap}.card{padding:26px}.result{padding-top:36px}.contents-line span:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.choice button:hover{transform:none!important}}

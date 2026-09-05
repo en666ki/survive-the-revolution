@@ -3,60 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1917–1922: интерактивные квесты по истории России</title>
-<link rel="stylesheet" href="style.css?v=25">
-<style>
-.menu-part { border: 1px solid var(--ink); padding: 22px 24px; margin-bottom: 20px; }
-.menu-part.locked { border-color: var(--line); color: var(--muted); }
-.menu-eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-.menu-part.locked .menu-eyebrow { color: var(--muted); }
-.menu-part h2 { margin-bottom: 10px; }
-.menu-part p { font-size: 16px; margin-bottom: 16px; }
-.menu-lock { font-size: 14px; font-style: italic; margin-top: 4px; }
-.menu-progress { font-size: 14px; color: var(--muted); margin-top: 14px; letter-spacing: .02em; }
-.menu-progress b { color: var(--ink); font-weight: normal; }
-.menu-part.locked .menu-progress b { color: var(--muted); }
-a.menu-play { display: inline-block; font: inherit; font-size: 17px; color: var(--ink); border: 1px solid var(--ink); padding: 10px 22px; text-decoration: none; transition: background .15s, color .15s; }
-a.menu-play:hover { background: var(--ink); color: var(--paper); }
-</style>
+<title>Три стороны истории · 1917–1939</title>
+<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="remaster.css?v=30">
+<link rel="stylesheet" href="reader.css?v=30">
 </head>
-<body>
-<div id="app">
-  <div class="card intro">
-    <div class="meta">Интерактивные квесты по истории России</div>
-    <h1>1917–1922</h1>
-    <div class="body">
-      <p>Пять лет, за которые страна переменила три власти, две столицы и одну орфографию. И то, чем это кончилось пятнадцать лет спустя. Три игры: снизу, сверху — и с той стороны стола.</p>
-    </div>
-
-    <div class="menu-part" style="margin-top:28px">
-      <div class="menu-eyebrow">Часть первая · выживание</div>
-      <h2>Переживите обе революции</h2>
-      <img class="menu-art" src="images/small-life.jpg" alt="Очередь у лавки в рабочем предместье" width="1536" height="1024" decoding="async">
-      <p>Вы — маленький человек: путиловский рабочий, поручик, курсистка или фабрикант. Задача одна — дожить до 1922 года. Судьба бросает кости, прошлые выборы решают, какие двери открыты, а какие — только нарисованы.</p>
-      <a class="menu-play" href="v1.html">Играть</a>
-      <div class="menu-progress" id="progress"></div>
-    </div>
-
-    <div class="menu-part" id="part2">
-      <div class="menu-eyebrow">Часть вторая · альтернативная история</div>
-      <h2>Действующие лица</h2>
-      <img class="menu-art" src="images/turning-point.jpg" alt="Станция и расходящиеся железнодорожные пути" width="1536" height="1024" loading="lazy" decoding="async">
-      <p>Вы — Ленин, Николай II, Савинков, Корнилов или Махно. Измените ход событий — и разберитесь с тем, что получилось. Парламенту нужен хлеб, победителям — земля, вольным советам — суд над своим. В знакомых развилках после живой концовки можно выбирать исход самому.</p>
-      <span id="p2action"></span>
-      <div class="menu-progress" id="progress2"></div>
-    </div>
-
-    <div class="menu-part" id="part3">
-      <div class="menu-eyebrow">Часть третья · 1936–1938</div>
-      <h2>Особая папка</h2>
-      <img class="menu-art sketch" src="images/special-folder.jpg" alt="Карандашная зарисовка папки на рабочем столе" width="1536" height="1024" loading="lazy" decoding="async">
-      <p>Вы — оперуполномоченный областного управления НКВД. Через ваш стол идут дела: секретари райкомов и комбриги, попы, инженеры, крестьяне, школьники. По каждому решение одно — пустить дальше или убрать. Наверху ждут цифр, внизу остаются бумаги; в тридцать девятом кто-нибудь сядет разбирать и то и другое.</p>
-      <span id="p3action"></span>
-      <div class="menu-progress" id="progress3"></div>
-    </div>
-  </div>
-</div>
+<body class="menu-page">
+<a class="skip-link" href="#app">К содержанию</a>
+<header class="edition-bar"><a class="edition-brand" href="index.html">1917<span> / </span>1939</a><span class="edition-label">Интерактивное историческое издание</span><div id="reader-tools"></div></header>
+<main id="app">
+<header class="cover-heading">
+<div><div class="meta">Россия · судьба · выбор</div><h1>Три стороны<br><em>истории.</em></h1></div>
+<div class="cover-intro">Сначала вы зависите от чужих решений. Потом принимаете их за страну. А затем отвечаете за собственную подпись.<small>Три игры. Одно время.</small></div>
+</header>
+<div class="contents-line"><span>Содержание / выберите часть</span><span>1917 — 1922 — 1939</span></div>
+<section class="menu-part">
+<figure class="menu-picture" data-reader-art><img class="menu-art" src="images/small-life.jpg" alt="Очередь у лавки в рабочем предместье" width="1536" height="1024"><figcaption><span>Петроград. В ожидании хлеба.</span><span>1917</span></figcaption></figure>
+<div class="menu-copy"><span class="menu-number" aria-hidden="true">I.</span><div class="menu-eyebrow">Часть первая · выживание</div><h2>Переживите<br>обе революции</h2><p>Рабочий, поручик, курсистка или фабрикант. Кому открыть дверь, что выменять на муку, с кем уехать. Большие события приходят через маленькие решения.</p><a class="menu-play" href="v1.html">Прожить одну жизнь</a><div class="menu-progress" id="progress"></div></div>
+</section>
+<section class="menu-part" id="part2">
+<figure class="menu-picture" data-reader-art><img class="menu-art" src="images/turning-point.jpg" alt="Станция и расходящиеся железнодорожные пути" width="1536" height="1024" loading="lazy"><figcaption><span>История на развилке.</span><span>1917–1922</span></figcaption></figure>
+<div class="menu-copy"><span class="menu-number" aria-hidden="true">II.</span><div class="menu-eyebrow">Часть вторая · альтернативная история</div><h2>Действующие<br>лица</h2><p>Ленин, Николай II, Савинков, Корнилов, Махно. Измените ход событий — и встретьтесь с теми, кому обещали землю, хлеб и свободу.</p><span id="p2action"></span><div class="menu-progress" id="progress2"></div></div>
+</section>
+<section class="menu-part menu-folder" id="part3">
+<div class="menu-picture" data-reader-art><div class="folder-display"><img src="images/dossiers/ck-c1-zemtsov.jpg" alt="Фотокарточка Земцова: профиль и анфас" loading="lazy"><span>1936–1939 · материалы к рассмотрению</span></div></div>
+<div class="menu-copy"><span class="menu-number" aria-hidden="true">III.</span><div class="menu-eyebrow">Часть третья · по другую сторону стола</div><h2>Особая папка</h2><p>За каждой фотографией — человек. За каждым протоколом — ваша подпись. Читайте материалы, замечайте противоречия и решайте, какую бумагу подшить в дело.</p><span id="p3action"></span><div class="menu-progress" id="progress3"></div></div>
+</section>
+<p class="edition-note">Знакомые случайности можно переиграть после живой концовки. Каждая часть помнит, где вы остановились. Исторические справки открываются по желанию.</p>
+</main>
+<footer class="site-footer"><span>Три стороны истории</span><span>Ваши решения остаются с вами.</span></footer>
 <script>
 (function () {
   var BGS = [
@@ -121,5 +96,7 @@ a.menu-play:hover { background: var(--ink); color: var(--paper); }
   }
 })();
 </script>
+
+<script src="reader.js?v=30"></script>
 </body>
 </html>

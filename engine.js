@@ -56,6 +56,17 @@ const PLACES = {
   village: 'Деревня под Тамбовом',
 };
 
+const CHAPTER_TITLES = ['', 'Хлебные хвосты', 'На свободе', 'Лето обещаний', 'Новая власть', 'Первый мир', 'Куда податься', 'По разные стороны', 'Год без пощады', 'Последний берег', 'После войны', 'Остаться в живых'];
+
+function lifeAside(withArt = false) {
+  const money = S.money > 1 ? 'Есть сбережения' : S.money > 0 ? 'Денег в обрез' : 'Карманы пусты';
+  const conn = S.conn > 0 ? 'Есть к кому обратиться' : 'Рассчитывать на себя';
+  return `<aside class="scene-aside">${withArt ? `<div class="scene-art">${RR.illustration('life', true)}</div>` : ''}` +
+    `<div class="resource-sheet"><div class="note-title">При себе</div><div class="resource-row"><span>Деньги</span><b>${S.money}</b></div><p>${money}</p>` +
+    `<div class="resource-row"><span>Связи</span><b>${S.conn}</b></div><p>${conn}</p></div>` +
+    (S.log.length ? RR.details('Записи о прожитом · ' + S.log.length, `<ol class="journey-log">${S.log.map(l => `<li>${l}</li>`).join('')}</ol>`) : '') + `</aside>`;
+}
+
 function show(id, resumed = false) {
   const node = NODES[id];
   if (!node) { app.innerHTML = `<div class="card"><p>Сцена «${esc(id)}» не найдена.</p></div>`; return; }
@@ -73,12 +84,13 @@ function show(id, resumed = false) {
   if (node.place || S.loc) meta.push(node.place || PLACES[S.loc]);
 
   let html = `<div class="card scene">`;
-  html += `<div class="meta">${meta.map(esc).join(' · ')}</div>`;
-  if (node.title) html += `<h2>${esc(val(node.title))}</h2>`;
-  html += `<div class="life-status">${esc(BACKGROUNDS[S.bg].name)} · ${S.money > 1 ? 'есть сбережения' : S.money > 0 ? 'денег в обрез' : 'карманы пусты'} · ${S.conn > 0 ? 'есть к кому обратиться' : 'рассчитывать на себя'}</div>`;
+  html += `<header class="scene-header"><div class="meta">${meta.map(esc).join(' · ')}</div>`;
+  html += `<h2>${esc(node.title ? val(node.title) : CHAPTER_TITLES[node.ch] || 'Жизнь продолжается')}</h2>`;
+  html += `<div class="life-status">${esc(BACKGROUNDS[S.bg].name)}</div></header>`;
+  html += `<div class="scene-layout"><div class="scene-main">`;
   if (RR.mastered(1, S.bg, id) && node.choices.some(c => c.roll)) html += `<p class="memory-note">Эта жизнь помнит развилку. При рискованном решении можно выбрать исход.</p>`;
   html += `<div class="body">${paras(text)}</div>`;
-  html += `<div class="choices">`;
+  html += `<div class="decision-label">Как поступить?</div><div class="choices">`;
 
   const choices = node.choices.filter(c => !c.when || c.when(S));
   choices.forEach((c, i) => {
@@ -90,7 +102,7 @@ function show(id, resumed = false) {
       html += `<div class="choice"><button data-i="${i}">${val(c.text)}</button></div>`;
     }
   });
-  html += `</div></div>`;
+  html += `</div></div>${lifeAside(id === 'ch1')}</div></div>`;
   app.innerHTML = html;
   window.scrollTo(0, 0);
   RR.focusScene(app);
@@ -137,7 +149,7 @@ function showResult(text, nextId) {
   const next = NODES[nextId];
   const isEnd = next && next.type;
   app.innerHTML =
-    `<div class="card result"><div class="body">${paras(text)}</div>` +
+    `<div class="card result"><div class="meta">Последствия решения</div><div class="body">${paras(text)}</div>` +
     `<div class="choices"><div class="choice"><button id="go">${isEnd ? 'Что же дальше?' : 'Дальше'}</button></div></div></div>`;
   window.scrollTo(0, 0);
   document.getElementById('go').addEventListener('click', () => show(nextId));
@@ -188,8 +200,7 @@ function showEnding(node, id) {
     html += RR.details('Историческая справка', paras(val(node.note)));
   }
   if (S.log.length) {
-    html += `<div class="path"><div class="note-title">Ваш путь</div><ul>` +
-            S.log.map(l => `<li>${l}</li>`).join('') + `</ul></div>`;
+    html += RR.details('Ваш путь · ' + S.log.length + ' записей', `<ol class="journey-log">${S.log.map(l => `<li>${l}</li>`).join('')}</ol>`);
   }
   html += `<div class="choices"><div class="choice"><button id="again">Прожить ещё одну жизнь</button></div>` +
           `<div class="choice"><button id="tomenu">Вернуться в меню</button></div></div>`;
@@ -208,7 +219,7 @@ function showIntro() {
   <div class="card intro">
     <div class="meta">Интерактивный квест по истории России</div>
     <h1>Переживите обе революции</h1>
-    ${RR.illustration('life')}
+    <div class="intro-layout"><div class="intro-copy">
     <div class="body">
       <p>Февраль 1917 года — год 1922-й. Пять лет, за которые страна переменит три власти, две столицы и одну орфографию.</p>
       <p>Кому открыть дверь. На что выменять муку. С кем уехать, когда последнему пароходу уже дают ход. Большие события доберутся до вас через маленькие решения.</p>
@@ -216,6 +227,7 @@ function showIntro() {
     </div>
     <div class="choices">${RR.resumeButton(1)}<div class="choice"><button id="play">Начать новую жизнь</button></div></div>
     ${RR.storageNote()}
+    </div><aside class="intro-art">${RR.illustration('life')}<p class="art-caption">Петроград. История на уровне улицы.</p></aside></div>
     <div class="path" style="margin-top:28px"><a href="index.html" style="color:inherit">← Меню цикла</a></div>
   </div>`;
   document.getElementById('play').addEventListener('click', showPick);
@@ -234,7 +246,7 @@ function showPick() {
   let html = `<div class="card scene"><div class="meta">Пролог · февраль 1917 · Петроград</div>
   <h2>Кто вы?</h2>
   <div class="body"><p>Зима выдалась лютая, хлебные хвосты стоят с ночи, на заводах глухо ропщут. Империя доживает последние дни — но об этом пока никто не знает. А вы живёте свою жизнь. Какую?</p></div>
-  <div class="choices">`;
+  <div class="choices role-picker">`;
   Object.entries(BACKGROUNDS).forEach(([key, bg]) => {
     const m = RR.memory(1, key);
     html += `<div class="choice bg-choice"><button data-bg="${key}"><span class="bg-name">${bg.name}</span><span class="bg-desc">${bg.desc}</span>${m.won ? '<span class="choice-sub">Вы уже выживали этой судьбой</span>' : ''}</button></div>`;

@@ -1,0 +1,59 @@
+/* The street chronicle and the political edition share a readable column
+   and a quieter margin for resources, illustrations and the player's notes. */
+.scene-header { padding-bottom: 22px; margin-bottom: 28px; border-bottom: 1px solid var(--line, #c9bda6); }
+.scene-header h2 { margin-bottom: 12px; }
+.scene-layout { display: grid; grid-template-columns: minmax(0, 1fr) 225px; gap: 40px; align-items: start; }
+.scene-main { min-width: 0; }
+.scene-aside { min-width: 0; border-left: 1px solid var(--line, #c9bda6); padding-left: 24px; }
+.scene-aside .reading-note { font-size: 14px; margin-top: 22px; }
+.scene-aside .reading-note summary { line-height: 1.5; }
+.scene-aside .reading-note > div { padding-left: 0; padding-right: 0; }
+.scene-art .illustration { margin: 0 0 24px; width: 100%; max-width: none; }
+.scene-art .illustration img, .intro-art .illustration img { display: block; width: 100%; height: auto; object-fit: contain; }
+.resource-sheet { font-family: Georgia, 'Times New Roman', serif; }
+.resource-sheet .note-title { margin-bottom: 20px; font-size: 12px; letter-spacing: .1em; }
+.resource-row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 15px; }
+.resource-row b { font-size: 25px; font-weight: normal; }
+.resource-row small { font-size: 13px; color: var(--muted); }
+.resource-sheet p { margin: 4px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.influence-meter { display: flex; gap: 3px; margin: 8px 0; }
+.influence-meter i { flex: 1; height: 8px; background: rgba(100, 80, 50, .12); }
+.influence-meter .filled { background: var(--accent); }
+.decision-label { margin: 28px 0 12px; color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: .18em; }
+.scene-main .choices { margin-top: 0; }
+.journey-log { padding-left: 20px; font-size: 14px; line-height: 1.6; }
+.journey-log li { padding-left: 3px; margin-bottom: 12px; }
+.intro-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, 1fr); gap: 48px; align-items: start; margin-top: 28px; }
+.intro-copy { min-width: 0; }
+.intro-art { padding-top: 5px; }
+.intro-art .illustration { max-width: none; width: 100%; margin: 0; }
+.art-caption { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); font-style: italic; }
+.choices.role-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.role-picker .choice { margin: 0; }
+.role-picker .choice button { height: 100%; padding: 24px; }
+.role-picker .bg-name, .role-picker .who-name { font-size: 27px; margin-bottom: 10px; }
+.role-picker .bg-desc, .role-picker .who-desc { font-size: 16px; line-height: 1.55; }
+.role-picker .choice-sub { margin-top: 18px; }
+.result { max-width: 820px; margin-left: auto; margin-right: auto; }
+.result > .meta { margin-bottom: 24px; }
+.mode-1 .ending .body, .mode-2 .ending .body { max-width: 720px; }
+@media (max-width: 800px) {
+  .scene-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .scene-aside { grid-row: 1; padding: 0 0 20px; border-left: 0; border-bottom: 1px solid var(--line, #c9bda6); }
+  .scene-aside .scene-art { display: none; }
+  .resource-sheet { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .resource-sheet .note-title { width: 100%; margin-bottom: 4px; }
+  .resource-sheet p { margin: 0 12px 0 0; }
+  .resource-row { gap: 8px; }
+  .resource-row b { font-size: 20px; }
+  .influence-meter { width: 90px; flex: 0 0 90px; }
+  .scene-aside .reading-note { margin-top: 12px; }
+  .intro-layout { gap: 28px; grid-template-columns: minmax(0, 1fr) minmax(180px, .65fr); }
+}
+@media (max-width: 560px) {
+  .intro-layout, .choices.role-picker { grid-template-columns: minmax(0, 1fr); }
+  .intro-art { grid-row: 1; max-width: 300px; margin: 0 auto; }
+  .intro-layout { margin-top: 20px; gap: 22px; }
+  .scene-header { margin-bottom: 20px; padding-bottom: 16px; }
+  .role-picker .choice button { padding: 20px; }
+}

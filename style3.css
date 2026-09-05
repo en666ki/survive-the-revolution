@@ -73,3 +73,59 @@
 .paper-trail li { padding-bottom: 8px; }
 .paper-trail span { color: var(--muted); }
 .ending.punishment .meta { color: #735b3d; }
+
+/* Remastered archive: an open file and small attached photographs. */
+.mode-3 { --accent: #85483e; --paper: #e8e2d3; }
+.mode-3 .card.case { padding: clamp(22px, 4vw, 54px); }
+.mode-3 .stats { font-family: 'Courier New', monospace; font-size: 13px; }
+.dossier { position: relative; margin: 32px 0; padding: clamp(18px, 3vw, 32px); background: #f2edde; border: 1px solid #cfc6b3; box-shadow: 3px 4px 0 #e6dfcf, 4px 5px 0 #cfc6b3; }
+.d-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom-color: #aaa18f; padding-bottom: 15px; margin-bottom: 24px; }
+.d-stamp { flex-shrink: 0; color: #925c51; border: 1px solid currentColor; padding: 3px 9px; transform: rotate(-4deg); font-size: 11px; letter-spacing: .15em; }
+.dossier-identity { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 29%); align-items: start; gap: 30px; }
+.f-row { display: grid; grid-template-columns: minmax(120px, 36%) minmax(0, 1fr); gap: 15px; padding: 9px 0; border-bottom: 1px solid #dbd3c3; }
+.f-key { color: #746f60; font-size: 12px; }
+.f-val { min-width: 0; overflow-wrap: anywhere; }
+.f-row:last-child { border-bottom: 0; }
+.dossier-photo { margin: 8px 0 0; position: relative; transform: rotate(1.5deg); }
+.dossier-photo::before { content: ''; position: absolute; width: 23px; height: 42px; border: 2px solid #827c6d; border-radius: 10px; top: -17px; left: 18px; transform: rotate(-9deg); z-index: 1; pointer-events: none; box-shadow: 1px 1px 2px #0003; }
+.dossier-photo a { display: block; padding: 6px; background: #f9f5eb; box-shadow: 2px 3px 8px #312b2525; transition: transform .18s; }
+.dossier-photo a:hover { transform: rotate(-1.5deg) translateY(-3px); }
+.dossier-photo img { display: block; width: 100%; height: auto; }
+.dossier-photo figcaption { display: flex; justify-content: space-between; gap: 8px; font: 11px/1.5 'Courier New', monospace; color: #736958; padding: 9px 2px; }
+.dossier-photo figcaption span:last-child { white-space: nowrap; }
+.f-block { display: block; margin-top: 25px; padding-top: 20px; border-top: 1px solid #aaa18f; }
+.f-block > .f-key { display: block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .13em; }
+.f-val ul { padding: 0; }
+.f-val .evidence { gap: 10px; padding: 8px 0; }
+.pencil-mark { flex: 0 0 34px; min-height: 34px; border: 1px solid transparent; border-radius: 50%; color: #685344; font: 23px Georgia, serif; }
+.pencil-mark:hover { border-color: #ae9a76; background: #bba77716; }
+.dossier-help { color: #776c59; font: italic 13px/1.6 Georgia, serif; margin-top: 15px; }
+.case-reading { max-width: 720px; margin-inline: auto; }
+.ask { border-top: 1px solid var(--line); padding-top: 25px; margin-top: 32px; font-size: 20px; }
+.mode-3 .archive-intro { padding: 0; overflow: hidden; }
+.archive-cover { position: relative; background: #c9ba97; padding: clamp(28px, 5vw, 62px); border-bottom: 1px solid #9f9276; background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #655c4305 4px); }
+.archive-cover h1 { margin-top: 34px; max-width: 700px; }
+.archive-subtitle { font: 13px/1.9 'Courier New', monospace; text-transform: uppercase; letter-spacing: .15em; }
+.archive-seal { position: absolute; right: 9%; bottom: 45px; color: #8c5040; padding: 9px 17px; border: 2px solid currentColor; text-transform: uppercase; font: 16px 'Courier New', monospace; letter-spacing: .18em; transform: rotate(-8deg); opacity: .75; }
+.archive-intro-content { padding: clamp(24px, 5vw, 60px); }
+.archive-intro-content > .body { max-width: 690px; }
+.archive-contact-sheet { display: flex; gap: 30px; margin: 0 0 28px; max-width: 480px; }
+.archive-contact-sheet .dossier-photo { flex: 1; min-width: 0; }
+.archive-contact-sheet .dossier-photo:nth-child(2) { transform: rotate(-2deg); }
+.archive-contact-sheet .dossier-photo figcaption span:last-child { display: none; }
+.photo-viewer { max-width: min(1100px, 94vw); width: 100%; max-height: 94vh; margin: auto; padding: 16px; border: 1px solid #a39880; background: #e9e1cf; color: #272722; box-shadow: 0 20px 90px #0008; }
+.photo-viewer::backdrop { background: #1d1c19db; }
+.photo-viewer form { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.photo-viewer button { padding: 8px 14px; background: transparent; border: 1px solid #92856f; font: 13px 'Courier New', monospace; cursor: pointer; }
+.photo-viewer > img { display: block; max-height: 74vh; max-width: 100%; width: auto; margin: auto; object-fit: contain; }
+.photo-viewer > p { text-align: center; font: 12px 'Courier New', monospace; margin: 14px 0 0; }
+@media (max-width: 720px) {
+  .dossier-identity { grid-template-columns: 1fr; gap: 20px; }
+  .dossier-identity .dossier-photo { grid-row: 1; width: min(280px, 88%); margin: 5px auto 12px; }
+  .f-row { grid-template-columns: 1fr; gap: 4px; }
+  .f-val .evidence { gap: 5px; }
+  .d-head { align-items: flex-start; gap: 8px; }
+  .d-stamp { font-size: 9px; padding: 3px 5px; }
+  .archive-seal { right: 22px; bottom: 28px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .dossier-photo a { transition: none; } }
